@@ -33,7 +33,7 @@ export class TravelService {
   async cotacao(travelQuoteDto: TravelQuoteDto): Promise<any> {
     this.quotes = [];
     
-    await this.cotacaoUniversalAssistanceTravel(travelQuoteDto);
+    await this.cotacaoUniversalAssistance(travelQuoteDto);
 
     await this.autenticacaoAssistCard();
 
@@ -43,9 +43,173 @@ export class TravelService {
   }
 
   async compra(compraDto: TravelCompraDto) {
+    if (compraDto.provider == 'universal') {
+      return this.compraUniversalAssistance(compraDto);
+    }
+    else if (compraDto.provider == 'assistCard') {
+      return this.compraAssistCard(compraDto);
+    }
+  }
+
+  destinos(): any {
+    return forkJoin([
+      this.universalAssistanceTravelService.destinos()
+    ]).pipe(
+      map(async ([response]) => {
+        return response;
+      }),
+    );
+  }
+
+  consultarCep(cep: string): any {
+    return forkJoin([
+      this.outSideService.consultarCep(cep)
+    ]).pipe(
+      map(async ([response]) => {
+        return response;
+      }),
+    );
+  }
+
+  private async autenticacaoAssistCard() {
+    const quotes: TravelQuoteResponse[] = [];
+    
+    return new Promise<void>((resolve, reject) => {
+      this.assistCardService.autenticacao().subscribe({
+        next: async (response) => {
+          this.assistCardtoken = response;
+          resolve();
+        },
+        error: (error) => {
+          reject(error);
+        }
+      })
+    });
+  }
+
+  private async cotacaoAssistCard(travelQuoteDto: TravelQuoteDto, sessionKey: string) {
+    const quotes: TravelQuoteResponse[] = [];
+    
+    return new Promise<void>((resolve, reject) => {
+      this.assistCardService.cotacao({
+        destiny: parseInt(travelQuoteDto.destiny.split(';')[0]),
+        departuredate: travelQuoteDto.departureDate,
+        returndate: travelQuoteDto.returnDate,
+        birthdates: travelQuoteDto.passengers.map((row) => ({
+          birthdate: row.birthDate,
+        })),
+        isB2cProject: false,
+        isCreditCard: true,
+        markup: 0.0,
+        promotionalCode: null,
+        sessiontoken: sessionKey
+      }).subscribe({
+        next: async (response) => {
+          for (const produto of response) {
+            const inputProduto: TravelQuoteResponse = {
+              operator: 'assistCard',
+              productReferenceId: produto.CodigoProduto,
+              productRate: produto.Rate,
+              amount: produto.Amount,
+              additionalDescription: null,
+              description: produto.RateDescription,
+              destinations: JSON.stringify(parseInt(travelQuoteDto.destiny.split(';')[0])),
+              coverage: produto.Coberturas.map((cobertura, index) => {
+                return {
+                  description: cobertura.Titulo,
+                  fullDescription: cobertura.Conteudo,
+                  amount: cobertura.Valor,
+                  orderIndex: cobertura.CoberturaId,
+                  coverageReferenceId: cobertura.CoberturaId,
+                };
+              }),
+            };
+            const travelQuote = await this.travelQuoteModel.create({
+              provider: 'assistCard',
+              destinations: JSON.stringify(parseInt(travelQuoteDto.destiny.split(';')[0])),
+              metadata: JSON.stringify(response),
+            });
+            quotes.push({ id: travelQuote.id, ...inputProduto });
+          }
+          const valoresFiltro = [
+            "PLANO 35", 
+            "PLANO 60", 
+            "PLANO 150", 
+            "PLANO 250", 
+            "PLANO 1M", 
+            "PLANO NACIONAL 50", 
+            "PLANO NACIONAL 100"
+          ];
+          this.quotes.push(...quotes.filter(quote => valoresFiltro.includes(quote.description)));
+          resolve();
+        },
+        error: (error) => {
+          reject(error);
+        }
+      })
+    });
+  }
+
+  private async cotacaoUniversalAssistance(travelQuoteDto: TravelQuoteDto) {
+    const quotes: TravelQuoteResponse[] = [];
+    
+    return new Promise<void>((resolve, reject) => {
+      this.universalAssistanceTravelService.cotacao({
+        destinos: [travelQuoteDto.destiny.split(';')[1]],
+        dataSaida: travelQuoteDto.departureDate,
+        dataRetorno: travelQuoteDto.returnDate,
+        passageiros: travelQuoteDto.passengers.map((row) => ({
+          dataNascimento: row.birthDate,
+        }))
+      }).subscribe({
+        next: async (response) => {
+          for (const produto of response.produtos) {
+            const inputProduto: TravelQuoteResponse = {
+              operator: 'universal',
+              productReferenceId: produto.idProduto,
+              productRate: null,
+              amount: produto.tarifa.valor,
+              additionalDescription: produto.descricaoAdicional,
+              description: produto.descricao,
+              destinations: JSON.stringify(travelQuoteDto.destiny),
+              coverage: produto.beneficios.map((benefit, index) => {
+                const existCoverage = response.beneficios.find(
+                  (b) => b.idBeneficio === benefit.idBeneficio,
+                );
+                if (existCoverage) {
+                  return {
+                    description: existCoverage.descricao,
+                    fullDescription: existCoverage.descricaoCompleta,
+                    amount: benefit.valor,
+                    orderIndex: existCoverage.ordem,
+                    coverageReferenceId: existCoverage.idBeneficio,
+                  };
+                }
+              }),
+            };
+            const travelQuote = await this.travelQuoteModel.create({
+              provider: 'universal',
+              destinations: JSON.stringify([travelQuoteDto.destiny]),
+              metadata: JSON.stringify(response),
+            });
+            quotes.push({ id: travelQuote.id, ...inputProduto });
+          }
+          this.quotes.push(...quotes);
+          resolve();
+        },
+        error: (error) => {
+          reject(error);
+        }
+      })
+    });
+  }
+
+  private async compraUniversalAssistance(compraDto: TravelCompraDto) {
     const cotacao = await this.travelQuoteModel.findById(compraDto.quoteId);
+    
     if (!cotacao)
       throw new HttpException('Quote not found', HttpStatus.NOT_FOUND);
+
     const travelQuote = JSON.parse(
       cotacao.metadata,
     ) as UniversalAssistanceTravelCotacao;
@@ -124,147 +288,45 @@ export class TravelService {
     return responseCompra;
   }
 
-  destinos(): any {
-    return forkJoin([
-      this.universalAssistanceTravelService.destinos()
-    ]).pipe(
-      map(async ([response]) => {
-        return response;
-      }),
-    );
-  }
+  private async compraAssistCard(compraDto: TravelCompraDto) {
+    const responseCompra: AssistCardCompraResponse = {
+      EmissoesResponseAPI: [{
+        Agency: '',
+        Branch: 0,
+        VoucherCode: 0,
+        VoucherGroup: '',
+        UrlEvoucher: '',
+        Productcode: '',
+        Productname: '',
+        Ratecode: 0,
+        Begindate: '',
+        Enddate: '',
+        Days: 0,
+        FamilyPlan: false,
+        Destination: 0,
+        Exchange: 0,
+        Cash: false,
+        CurrencyCode: 0,
+        Creditcardid: 0,
+        Instalments: 0,
+        Name: '',
+        Lastname: '',
+        Documenttype: 0,
+        Documentnumber: '',
+        Birthdate: '',
+        Gender: '',
+        Email: '',
+        Phone: '',
+        Contactfullname: '',
+        Additionaldata1: '',
+        Additionaldata2: '',
+        Upgrades: null,
+        ExternalSellingId: '',
+        linkImpressao: '',
+      }],
+      Totalamount: 0
+    };
 
-  consultarCep(cep: string): any {
-    return forkJoin([
-      this.outSideService.consultarCep(cep)
-    ]).pipe(
-      map(async ([response]) => {
-        return response;
-      }),
-    );
-  }
-
-  private async autenticacaoAssistCard() {
-    const quotes: TravelQuoteResponse[] = [];
-    
-    return new Promise<void>((resolve, reject) => {
-      this.assistCardService.autenticacao().subscribe({
-        next: async (response) => {
-          this.assistCardtoken = response;
-          resolve();
-        },
-        error: (error) => {
-          reject(error);
-        }
-      })
-    });
-  }
-
-  private async cotacaoAssistCard(travelQuoteDto: TravelQuoteDto, sessionKey: string) {
-    const quotes: TravelQuoteResponse[] = [];
-    
-    return new Promise<void>((resolve, reject) => {
-      this.assistCardService.cotacao({
-        destiny: parseInt('4'),
-        departuredate: travelQuoteDto.departureDate,
-        returndate: travelQuoteDto.returnDate,
-        birthdates: travelQuoteDto.passengers.map((row) => ({
-          birthdate: row.birthDate,
-        })),
-        isB2cProject: false,
-        isCreditCard: true,
-        markup: 0.0,
-        promotionalCode: null,
-        sessiontoken: sessionKey
-      }).subscribe({
-        next: async (response) => {
-          for (const produto of response) {
-            const inputProduto: TravelQuoteResponse = {
-              operator: 'assistCard',
-              productReferenceId: produto.CodigoProduto,
-              productRate: produto.Rate,
-              amount: produto.Amount,
-              additionalDescription: null,
-              description: produto.RateDescription,
-              destinations: JSON.stringify(travelQuoteDto.destiny),
-              coverage: produto.Coberturas.map((cobertura, index) => {
-                return {
-                  description: cobertura.Titulo,
-                  fullDescription: cobertura.Conteudo,
-                  amount: cobertura.Valor,
-                  orderIndex: cobertura.CoberturaId,
-                  coverageReferenceId: cobertura.CoberturaId,
-                };
-              }),
-            };
-            const travelQuote = await this.travelQuoteModel.create({
-              provider: 'assistCard',
-              destinations: JSON.stringify(parseInt('4')),
-              metadata: JSON.stringify(response),
-            });
-            quotes.push({ id: travelQuote.id, ...inputProduto });
-          }
-          this.quotes.push(...quotes.slice(0, 3));
-          resolve();
-        },
-        error: (error) => {
-          reject(error);
-        }
-      })
-    });
-  }
-
-  private async cotacaoUniversalAssistanceTravel(travelQuoteDto: TravelQuoteDto) {
-    const quotes: TravelQuoteResponse[] = [];
-    
-    return new Promise<void>((resolve, reject) => {
-      this.universalAssistanceTravelService.cotacao({
-        destinos: [travelQuoteDto.destiny],
-        dataSaida: travelQuoteDto.departureDate,
-        dataRetorno: travelQuoteDto.returnDate,
-        passageiros: travelQuoteDto.passengers.map((row) => ({
-          dataNascimento: row.birthDate,
-        }))
-      }).subscribe({
-        next: async (response) => {
-          for (const produto of response.produtos) {
-            const inputProduto: TravelQuoteResponse = {
-              operator: 'universal',
-              productReferenceId: produto.idProduto,
-              productRate: null,
-              amount: produto.tarifa.valor,
-              additionalDescription: produto.descricaoAdicional,
-              description: produto.descricao,
-              destinations: JSON.stringify(travelQuoteDto.destiny),
-              coverage: produto.beneficios.map((benefit, index) => {
-                const existCoverage = response.beneficios.find(
-                  (b) => b.idBeneficio === benefit.idBeneficio,
-                );
-                if (existCoverage) {
-                  return {
-                    description: existCoverage.descricao,
-                    fullDescription: existCoverage.descricaoCompleta,
-                    amount: benefit.valor,
-                    orderIndex: existCoverage.ordem,
-                    coverageReferenceId: existCoverage.idBeneficio,
-                  };
-                }
-              }),
-            };
-            const travelQuote = await this.travelQuoteModel.create({
-              provider: 'universal',
-              destinations: JSON.stringify([travelQuoteDto.destiny]),
-              metadata: JSON.stringify(response),
-            });
-            quotes.push({ id: travelQuote.id, ...inputProduto });
-          }
-          this.quotes.push(...quotes.slice(0, 3));
-          resolve();
-        },
-        error: (error) => {
-          reject(error);
-        }
-      })
-    });
+    return responseCompra;
   }
 }
