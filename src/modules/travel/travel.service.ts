@@ -14,6 +14,9 @@ import { TravelCompra } from './schemas/travel-compra';
 import { AssistCardService } from '../assist-card/assist-card.service';
 import { AssistCardTokenResponse } from '../assist-card/types/assist-card-token-response';
 import { OutSideService } from '../outside/outside.service';
+import { AssistCardCotacaoInput } from '../assist-card/types/assist-card-cotacao';
+import { AssistCardCotacao } from '../assist-card/types/assist-card-response';
+import { AssistCardCompraInput, Passageiro } from '../assist-card/types/assist-card-compra-input';
 
 @Injectable()
 export class TravelService {
@@ -47,7 +50,8 @@ export class TravelService {
       return this.compraUniversalAssistance(compraDto);
     }
     else if (compraDto.provider == 'assistCard') {
-      return this.compraAssistCard(compraDto);
+      await this.autenticacaoAssistCard();
+      return this.compraAssistCard(compraDto, this.assistCardtoken.sessionKey);
     }
   }
 
@@ -105,7 +109,11 @@ export class TravelService {
         sessiontoken: sessionKey
       }).subscribe({
         next: async (response) => {
-          for (const produto of response) {
+          const result = response.filter(item => {
+            const valor = parseFloat(item.DmhoAmount.replace(/\./g, ""));
+            return valor <= travelQuoteDto.range * 1000;
+          });
+          for (const produto of result) {
             const inputProduto: TravelQuoteResponse = {
               operator: 'assistCard',
               productReferenceId: produto.CodigoProduto,
@@ -127,20 +135,12 @@ export class TravelService {
             const travelQuote = await this.travelQuoteModel.create({
               provider: 'assistCard',
               destinations: JSON.stringify(parseInt(travelQuoteDto.destiny.split(';')[0])),
-              metadata: JSON.stringify(response),
+              metadata: JSON.stringify(produto),
             });
             quotes.push({ id: travelQuote.id, ...inputProduto });
           }
-          const valoresFiltro = [
-            "PLANO 35", 
-            "PLANO 60", 
-            "PLANO 150", 
-            "PLANO 250", 
-            "PLANO 1M", 
-            "PLANO NACIONAL 50", 
-            "PLANO NACIONAL 100"
-          ];
-          this.quotes.push(...quotes.filter(quote => valoresFiltro.includes(quote.description)));
+          
+          this.quotes.push(...quotes);
           resolve();
         },
         error: (error) => {
@@ -152,7 +152,6 @@ export class TravelService {
 
   private async cotacaoUniversalAssistance(travelQuoteDto: TravelQuoteDto) {
     const quotes: TravelQuoteResponse[] = [];
-    
     return new Promise<void>((resolve, reject) => {
       this.universalAssistanceTravelService.cotacao({
         destinos: [travelQuoteDto.destiny.split(';')[1]],
@@ -163,7 +162,8 @@ export class TravelService {
         }))
       }).subscribe({
         next: async (response) => {
-          for (const produto of response.produtos) {
+          var result = response.produtos.filter(p => p.beneficios[0].valorEmDinheiro <= travelQuoteDto.range*1000);
+          for (const produto of result) {
             const inputProduto: TravelQuoteResponse = {
               operator: 'universal',
               productReferenceId: produto.idProduto,
@@ -171,7 +171,7 @@ export class TravelService {
               amount: produto.tarifa.valor,
               additionalDescription: produto.descricaoAdicional,
               description: produto.descricao,
-              destinations: JSON.stringify(travelQuoteDto.destiny),
+              destinations: JSON.stringify([travelQuoteDto.destiny.split(';')[1]]),
               coverage: produto.beneficios.map((benefit, index) => {
                 const existCoverage = response.beneficios.find(
                   (b) => b.idBeneficio === benefit.idBeneficio,
@@ -189,7 +189,7 @@ export class TravelService {
             };
             const travelQuote = await this.travelQuoteModel.create({
               provider: 'universal',
-              destinations: JSON.stringify([travelQuoteDto.destiny]),
+              destinations: JSON.stringify([travelQuoteDto.destiny.split(';')[1]]),
               metadata: JSON.stringify(response),
             });
             quotes.push({ id: travelQuote.id, ...inputProduto });
@@ -288,45 +288,103 @@ export class TravelService {
     return responseCompra;
   }
 
-  private async compraAssistCard(compraDto: TravelCompraDto) {
-    const responseCompra: AssistCardCompraResponse = {
-      EmissoesResponseAPI: [{
-        Agency: '',
-        Branch: 0,
-        VoucherCode: 0,
-        VoucherGroup: '',
-        UrlEvoucher: '',
-        Productcode: '',
-        Productname: '',
-        Ratecode: 0,
-        Begindate: '',
-        Enddate: '',
-        Days: 0,
-        FamilyPlan: false,
-        Destination: 0,
-        Exchange: 0,
-        Cash: false,
-        CurrencyCode: 0,
-        Creditcardid: 0,
-        Instalments: 0,
-        Name: '',
-        Lastname: '',
-        Documenttype: 0,
-        Documentnumber: '',
-        Birthdate: '',
-        Gender: '',
-        Email: '',
-        Phone: '',
-        Contactfullname: '',
-        Additionaldata1: '',
-        Additionaldata2: '',
-        Upgrades: null,
-        ExternalSellingId: '',
-        linkImpressao: '',
-      }],
-      Totalamount: 0
-    };
+  private async compraAssistCard(compraDto: TravelCompraDto, sessionKey: string) {
+    const cotacao = await this.travelQuoteModel.findById(compraDto.quoteId);
 
+    if (!cotacao)
+      throw new HttpException('Quote not found', HttpStatus.NOT_FOUND);
+    
+    const travelQuote = JSON.parse(
+      cotacao.metadata,
+    ) as AssistCardCotacao;
+
+    if (!travelQuote) new HttpException('Product not found', HttpStatus.NOT_FOUND);
+
+    const passengers: Passageiro[] = [
+      {
+        name: compraDto.holder.firstName,
+        lastname: compraDto.holder.lastName, 
+        documentcountry: 'Brasil',
+        documenttype: 9, 
+        documentnumber: compraDto.holder.cpfNumber, 
+        birthdate: compraDto.holder.birthDate, 
+        gender: compraDto.holder.gender, 
+        email: 'pablo.fernandez@assistcard.com', 
+        phone: compraDto.holder.cellPhone, 
+        zipcode: compraDto.holder.zipCode, 
+        address: compraDto.holder.address, 
+        number: compraDto.holder.number, 
+        district: compraDto.holder.neighborhood, 
+        complement: '', 
+        city: compraDto.holder.city, 
+        state: compraDto.holder.uf, 
+        contactfullname: 'Lucas Silveira Camargos Couto',
+        contactphone: '+5537991181831', 
+        additionaldata1: '', 
+        additionaldata2: '', 
+        upgrades: null
+      }
+    ];
+
+    const responseCompra = await firstValueFrom(
+      await this.assistCardService.compra({
+        productcode: travelQuote.CodigoProduto,
+        ratecode: travelQuote.Rate,
+        departuredate: travelQuote.departuredate,
+        returndate: travelQuote.returndate,
+        destiny: parseInt(JSON.parse(cotacao.destinations)),
+        cash: true,
+        creditcardid: 0,
+        creditcardcpf: null,
+        creditcardname: null,
+        creditcardnumber: null,
+        expirationdate: null,
+        cardholdername: null,
+        CurrencyCode: 1,
+        instalments: 1,
+        contactfullname: 'Lucas Silveira Camargos Couto',
+        contactphone: '+5537991181831',
+        passengers: JSON.stringify(passengers),
+        upgrades: null,
+        markup: 0.0,
+        discount: 0.0,
+        sessiontoken: sessionKey,
+        additionalInformation: null,
+        isB2cProject: false,
+        promotionalCode: null,
+        days: null,
+        familyPlan: null,
+        quotation: null
+      }),
+    );
+
+    let customer;
+
+    customer = await this.customerService.findOneByCpf(
+      compraDto.holder.cpfNumber,
+    );
+    if (!customer) {
+      customer = await this.customerService.createCustomer({
+        firstName: compraDto.holder.firstName,
+        lastName: compraDto.holder.lastName,
+        cpfNumber: compraDto.holder.cpfNumber,
+        cellPhone: compraDto.holder.cellPhone,
+        address: compraDto.holder.address,
+        zipCode: compraDto.holder.zipCode,
+        number: compraDto.holder.number,
+        neighborhood: compraDto.holder.neighborhood,
+        city: compraDto.holder.city,
+        uf: compraDto.holder.uf,
+        birthDate: compraDto.holder.birthDate,
+      });
+    }
+
+    await this.travelCompraModel.create({
+      contato: customer,
+      provider: 'assistCard',
+      metadata: JSON.stringify(responseCompra),
+    });
+    
     return responseCompra;
   }
 }

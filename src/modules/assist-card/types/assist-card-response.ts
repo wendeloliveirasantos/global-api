@@ -4,6 +4,8 @@ export interface AssistCardCotacao {
   CodigoProduto: string;
   Rate: number;
   RateDescription: string;
+  departuredate: string;
+  returndate: string;
   Minimumdays: number;
   Publishedrate: boolean;
   IsTTRModality: boolean;

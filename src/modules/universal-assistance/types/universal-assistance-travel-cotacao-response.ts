@@ -8,6 +8,7 @@ export interface Beneficio {
   apelido: string | null;
   categoriaBeneficio: number;
   valor?: string;
+  valorEmDinheiro?: number;
 }
 
 export interface Passageiro {

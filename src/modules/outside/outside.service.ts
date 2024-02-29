@@ -44,7 +44,6 @@ export class OutSideService {
         infer: true,
       },
     );
-    console.log(cepUrl);
     return {
       cepUrl
     };

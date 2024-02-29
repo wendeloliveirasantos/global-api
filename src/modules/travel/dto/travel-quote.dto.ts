@@ -35,4 +35,8 @@ export class TravelQuoteDto {
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   passengers: PassengerDto[];
+  
+  @ApiProperty({ example: 500 })
+  @IsNotEmpty()
+  range: number;
 }

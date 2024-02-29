@@ -52,7 +52,13 @@ export class UniversalAssistanceTravelService {
         headers,
       })
       .pipe(
-        map((res) => res.data),
+        map((res) => {
+          var data = res.data as UniversalAssistanceTravelCotacao;
+          var produtos = data.produtos.filter(p => p.multiviagem == false);
+          data.produtos = [];
+          data.produtos.push(...produtos);
+          return data;
+        }),
         catchError(() => {
           throw new ForbiddenException(
             'Universal Assistance Travel not available to quote',
