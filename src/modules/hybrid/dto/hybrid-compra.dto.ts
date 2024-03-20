@@ -27,7 +27,7 @@ export class PassengerDto {
   birthDate: string;
 }
 
-export class TravelCompraDto {
+export class HybridCompraDto {
   @IsString()
   @IsNotEmpty()
   quoteId: string;

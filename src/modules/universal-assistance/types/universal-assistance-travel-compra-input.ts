@@ -17,6 +17,7 @@ export interface UniversalAssistanceTravelDadosTitular {
   documento: string;
   tipoDocumento: number;
   telefone: string;
+  email: string;
   endereco: string;
   numero: string;
   cep: string;

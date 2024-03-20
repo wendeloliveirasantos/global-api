@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
@@ -468,9 +468,18 @@ export class AssistCardService {
       ...dto
     };
 
-    const url = assistCardUrl + '/APIjson/Emissao';
+    const url = 'https://portalbr_p.assistcard.com/APIjson/Emissao'; //assistCardUrl + '/APIjson/Emissao'
     return this.httpService.post(url, input, { headers }).pipe(
-      map((res) => res.data),
+      map((res) => {
+        if (res.data.success) {
+          return res.data
+        }
+        else{
+          throw new BadRequestException(
+            'Assist Card not available to purchase',
+          );
+        }
+      }),
       catchError((error) => {
         this.logger.error({ input, error });
         throw new ForbiddenException(

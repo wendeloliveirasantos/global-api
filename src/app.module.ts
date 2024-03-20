@@ -9,17 +9,22 @@ import { CustomerModule } from './modules/customer/customer.module';
 import assistCardConfig from './config/assist-card.config';
 import { AssistCardModule } from './modules/assist-card/assist-card.module';
 import { OutSideModule } from './modules/outside/outside.module';
+import nowSysConfig from './config/now-sys.config';
+import { NowSysModule } from './modules/now-sys/now-sys.module';
+import { HybridModule } from './modules/hybrid/hybrid.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, universalAssistanceTravelConfig, assistCardConfig],
+      load: [appConfig, universalAssistanceTravelConfig, assistCardConfig, nowSysConfig],
       envFilePath: ['.env'],
     }),
     MongooseModule.forRoot(process.env.MONGO_URL),
     UniversalAssistanceModule,
     AssistCardModule,
+    NowSysModule,
+    HybridModule,
     TravelModule,
     CustomerModule,
     OutSideModule

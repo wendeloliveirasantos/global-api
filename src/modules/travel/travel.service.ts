@@ -228,9 +228,9 @@ export class TravelService {
           dataSaida: travelQuote.dataInicial,
           dataRetorno: travelQuote.dataFinal,
           valorCompra: produto.tarifa.valor,
-          formaPagamento: 1,
-          nomeContatoBrasil: 'Lucas Silveira Camargos Couto',
-          telefoneContatoBrasil: '+5537991181831',
+          formaPagamento: 2,
+          nomeContatoBrasil: compraDto.emergencyContact.name,
+          telefoneContatoBrasil: compraDto.emergencyContact.cellPhone,
         },
         dadosTitular: {
           codigo: 0,
@@ -239,6 +239,7 @@ export class TravelService {
           documento: compraDto.holder.cpfNumber,
           tipoDocumento: UniversalAssistanceTravelTipoDeDocumentoEnum.cpf,
           telefone: compraDto.holder.cellPhone,
+          email: compraDto.holder.email,
           endereco: compraDto.holder.address,
           cep: compraDto.holder.zipCode,
           numero: compraDto.holder.number,
@@ -254,7 +255,16 @@ export class TravelService {
           codigoPeriodoMultiViagem: 0,
           codigoTarifaAcordo: 0,
         },
-        dadosPagamento: {},
+        dadosPagamento: {
+          codigoOperadora: this.obterCodigoOperadoraUniversal(compraDto.payment.operator),
+          nomeTitularCartao: compraDto.payment.cardholderName,
+          cpfTitular: compraDto.payment.cardholderCPF,
+          numeroCartao: compraDto.payment.cardNumber,
+          codigoSeguranca: compraDto.payment.securityCode,
+          mesValidade: compraDto.payment.expiryMonth,
+          anoValidade: compraDto.payment.expiryYear,
+          parcelas: compraDto.payment.installments,
+        },
       }),
     );
 
@@ -309,7 +319,7 @@ export class TravelService {
         documentnumber: compraDto.holder.cpfNumber, 
         birthdate: compraDto.holder.birthDate, 
         gender: compraDto.holder.gender, 
-        email: 'pablo.fernandez@assistcard.com', 
+        email: compraDto.holder.email, 
         phone: compraDto.holder.cellPhone, 
         zipcode: compraDto.holder.zipCode, 
         address: compraDto.holder.address, 
@@ -318,8 +328,8 @@ export class TravelService {
         complement: '', 
         city: compraDto.holder.city, 
         state: compraDto.holder.uf, 
-        contactfullname: 'Lucas Silveira Camargos Couto',
-        contactphone: '+5537991181831', 
+        contactfullname: compraDto.emergencyContact.name,
+        contactphone: compraDto.emergencyContact.cellPhone, 
         additionaldata1: '', 
         additionaldata2: '', 
         upgrades: null
@@ -328,27 +338,27 @@ export class TravelService {
 
     const responseCompra = await firstValueFrom(
       await this.assistCardService.compra({
-        productcode: travelQuote.CodigoProduto,
-        ratecode: travelQuote.Rate,
+        productcode: "0V", //travelQuote.CodigoProduto,
+        ratecode: 39995, //travelQuote.Rate,
         departuredate: travelQuote.departuredate,
         returndate: travelQuote.returndate,
         destiny: parseInt(JSON.parse(cotacao.destinations)),
-        cash: true,
+        cash: false,
         creditcardid: 0,
-        creditcardcpf: null,
-        creditcardname: null,
-        creditcardnumber: null,
-        expirationdate: null,
-        cardholdername: null,
-        CurrencyCode: 1,
-        instalments: 1,
-        contactfullname: 'Lucas Silveira Camargos Couto',
-        contactphone: '+5537991181831',
+        creditcardcpf: compraDto.payment.cardholderCPF,
+        creditcardname: compraDto.payment.cardholderName,
+        creditcardnumber: "5555666677778884", //compraDto.payment.cardNumber,
+        expirationdate: compraDto.payment.expiryMonth + '/' + compraDto.payment.expiryYear,
+        cardholdername: this.obterCodigoOperadoraAssistCard(compraDto.payment.operator).toString(),
+        CurrencyCode: 2,
+        instalments: compraDto.payment.installments,
+        contactfullname: compraDto.emergencyContact.name,
+        contactphone: compraDto.emergencyContact.cellPhone,
         passengers: JSON.stringify(passengers),
         upgrades: null,
         markup: 0.0,
         discount: 0.0,
-        sessiontoken: sessionKey,
+        sessiontoken: "9U+DnBS26AFQv+u/CFc/CXENzNsAPJMF0c+hmMjIg3bcgfddxPFgwKZvozHnYB2h/wR3QotROrzm7HW5oPt7/tZztzFDjsA6CCiWqgmZbBg=", //sessionKey,
         additionalInformation: null,
         isB2cProject: false,
         promotionalCode: null,
@@ -386,5 +396,31 @@ export class TravelService {
     });
     
     return responseCompra;
+  }
+
+  private obterCodigoOperadoraUniversal(operadora) {
+    switch (operadora.toLowerCase()) {
+      case 'amex':
+        return 1;
+      case 'visa':
+        return 2;
+      case 'mastercard':
+        return 3;
+      default:
+        return null;
+    }
+  }
+
+  private obterCodigoOperadoraAssistCard(operadora) {
+    switch (operadora.toLowerCase()) {
+      case 'amex':
+        return 3;
+      case 'visa':
+        return 1;
+      case 'mastercard':
+        return 2;
+      default:
+        return null;
+    }
   }
 }

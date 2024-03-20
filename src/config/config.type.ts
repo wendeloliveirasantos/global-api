@@ -31,6 +31,12 @@ export type AssistCard = {
   assistCardSenha: string;
 };
 
+export type NowSys = {
+  nowSysUrl: string;
+  nowSysLogin: string;
+  nowSysSenha: string;
+};
+
 export type MailConfig = {
   port: number;
   host?: string;
@@ -53,5 +59,6 @@ export type AllConfigType = {
   mail: MailConfig;
   universalAssistanceTravel: UniversalAssistanceTravel;
   assistCard: AssistCard;
+  nowSys: NowSys;
   outSide: OutSide;
 };
