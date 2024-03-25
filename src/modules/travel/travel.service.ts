@@ -220,23 +220,23 @@ export class TravelService {
     );
 
     if (!produto) new HttpException('Product not found', HttpStatus.NOT_FOUND);
-    
-    // const dadosIntegrantes = compraDto.passengers?.map((passageiro: any) => ({
-    //   codigo: 2,
-    //   nome: passageiro.firstName,
-    //   sobrenome: passageiro.lastName,
-    //   documento: passageiro.document,
-    //   tipoDocumento: UniversalAssistanceTravelTipoDeDocumentoEnum.cpf,
-    //   telefone: compraDto.holder.cellPhone,
-    //   email: compraDto.holder.email,
-    //   endereco: compraDto.holder.address,
-    //   cep: compraDto.holder.zipCode,
-    //   numero: compraDto.holder.number,
-    //   bairro: compraDto.holder.neighborhood,
-    //   cidade: compraDto.holder.city,
-    //   dataNascimento: passageiro.birthDate,
-    //   uf: compraDto.holder.uf,
-    // })) || null;
+
+    const dadosIntegrantes = compraDto.passengers?.map((passageiro: any) => ({
+      codigo: 2,
+      nome: passageiro.firstName,
+      sobrenome: passageiro.lastName,
+      documento: passageiro.document,
+      tipoDocumento: UniversalAssistanceTravelTipoDeDocumentoEnum.cpf,
+      telefone: compraDto.holder.cellPhone,
+      email: compraDto.holder.email,
+      endereco: compraDto.holder.address,
+      cep: compraDto.holder.zipCode,
+      numero: compraDto.holder.number,
+      bairro: compraDto.holder.neighborhood,
+      cidade: compraDto.holder.city,
+      dataNascimento: passageiro.birthDate,
+      uf: compraDto.holder.uf,
+    })) || null;
 
     const responseCompra = await firstValueFrom(
       await this.universalAssistanceTravelService.compra({
@@ -265,7 +265,7 @@ export class TravelService {
           dataNascimento: compraDto.holder.birthDate,
           uf: compraDto.holder.uf,
         },
-        dadosIntegrantes: null,
+        dadosIntegrantes: dadosIntegrantes,
         dadosProdutos: {
           codigoProduto: produto.idProduto,
           valorProduto: produto.tarifa.valor,
@@ -351,35 +351,35 @@ export class TravelService {
       upgrades: null
     };
 
-    // const passageiros = compraDto.passengers?.map((passageiro: any) => ({
-    //   name: passageiro.firstName,
-    //   lastname: passageiro.lastName, 
-    //   documentcountry: 'Brasil',
-    //   documenttype: 9, 
-    //   documentnumber: passageiro.document, 
-    //   birthdate: passageiro.birthDate, 
-    //   gender: passageiro.gender, 
-    //   email: compraDto.holder.email, 
-    //   phone: compraDto.holder.cellPhone, 
-    //   zipcode: compraDto.holder.zipCode, 
-    //   address: compraDto.holder.address, 
-    //   number: compraDto.holder.number, 
-    //   district: compraDto.holder.neighborhood, 
-    //   complement: '', 
-    //   city: compraDto.holder.city, 
-    //   state: compraDto.holder.uf, 
-    //   contactfullname: compraDto.emergencyContact.name,
-    //   contactphone: compraDto.emergencyContact.cellPhone, 
-    //   additionaldata1: '', 
-    //   additionaldata2: '', 
-    //   upgrades: null
-    // })) || [];
+    const passageiros = compraDto.passengers?.map((passageiro: any) => ({
+      name: passageiro.firstName,
+      lastname: passageiro.lastName, 
+      documentcountry: 'Brasil',
+      documenttype: 9, 
+      documentnumber: passageiro.document, 
+      birthdate: passageiro.birthDate, 
+      gender: passageiro.gender, 
+      email: compraDto.holder.email, 
+      phone: compraDto.holder.cellPhone, 
+      zipcode: compraDto.holder.zipCode, 
+      address: compraDto.holder.address, 
+      number: compraDto.holder.number, 
+      district: compraDto.holder.neighborhood, 
+      complement: '', 
+      city: compraDto.holder.city, 
+      state: compraDto.holder.uf, 
+      contactfullname: compraDto.emergencyContact.name,
+      contactphone: compraDto.emergencyContact.cellPhone, 
+      additionaldata1: '', 
+      additionaldata2: '', 
+      upgrades: null
+    })) || [];
 
     const passengers: Passageiro[] = [
       titular
     ];
 
-    //passengers.push(...passageiros);
+    passengers.push(...passageiros);
 
     const responseCompra = await firstValueFrom(
       await this.assistCardService.compra({
