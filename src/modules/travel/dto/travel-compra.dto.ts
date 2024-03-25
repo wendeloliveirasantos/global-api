@@ -20,6 +20,10 @@ export class PassengerDto {
 
   @IsString()
   @IsNotEmpty()
+  document: string;
+
+  @IsString()
+  @IsNotEmpty()
   gender: string;
 
   @IsString()

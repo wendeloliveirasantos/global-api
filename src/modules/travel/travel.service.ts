@@ -220,6 +220,23 @@ export class TravelService {
     );
 
     if (!produto) new HttpException('Product not found', HttpStatus.NOT_FOUND);
+    
+    // const dadosIntegrantes = compraDto.passengers?.map((passageiro: any) => ({
+    //   codigo: 2,
+    //   nome: passageiro.firstName,
+    //   sobrenome: passageiro.lastName,
+    //   documento: passageiro.document,
+    //   tipoDocumento: UniversalAssistanceTravelTipoDeDocumentoEnum.cpf,
+    //   telefone: compraDto.holder.cellPhone,
+    //   email: compraDto.holder.email,
+    //   endereco: compraDto.holder.address,
+    //   cep: compraDto.holder.zipCode,
+    //   numero: compraDto.holder.number,
+    //   bairro: compraDto.holder.neighborhood,
+    //   cidade: compraDto.holder.city,
+    //   dataNascimento: passageiro.birthDate,
+    //   uf: compraDto.holder.uf,
+    // })) || null;
 
     const responseCompra = await firstValueFrom(
       await this.universalAssistanceTravelService.compra({
@@ -233,7 +250,7 @@ export class TravelService {
           telefoneContatoBrasil: compraDto.emergencyContact.cellPhone,
         },
         dadosTitular: {
-          codigo: 0,
+          codigo: 1,
           nome: compraDto.holder.firstName,
           sobrenome: compraDto.holder.lastName,
           documento: compraDto.holder.cpfNumber,
@@ -248,7 +265,7 @@ export class TravelService {
           dataNascimento: compraDto.holder.birthDate,
           uf: compraDto.holder.uf,
         },
-        dadosIntegrantes: [],
+        dadosIntegrantes: null,
         dadosProdutos: {
           codigoProduto: produto.idProduto,
           valorProduto: produto.tarifa.valor,
@@ -310,31 +327,59 @@ export class TravelService {
 
     if (!travelQuote) new HttpException('Product not found', HttpStatus.NOT_FOUND);
 
+    const titular = {
+      name: compraDto.holder.firstName,
+      lastname: compraDto.holder.lastName, 
+      documentcountry: 'Brasil',
+      documenttype: 9, 
+      documentnumber: compraDto.holder.cpfNumber, 
+      birthdate: compraDto.holder.birthDate, 
+      gender: compraDto.holder.gender, 
+      email: compraDto.holder.email, 
+      phone: compraDto.holder.cellPhone, 
+      zipcode: compraDto.holder.zipCode, 
+      address: compraDto.holder.address, 
+      number: compraDto.holder.number, 
+      district: compraDto.holder.neighborhood, 
+      complement: '', 
+      city: compraDto.holder.city, 
+      state: compraDto.holder.uf, 
+      contactfullname: compraDto.emergencyContact.name,
+      contactphone: compraDto.emergencyContact.cellPhone, 
+      additionaldata1: '', 
+      additionaldata2: '', 
+      upgrades: null
+    };
+
+    // const passageiros = compraDto.passengers?.map((passageiro: any) => ({
+    //   name: passageiro.firstName,
+    //   lastname: passageiro.lastName, 
+    //   documentcountry: 'Brasil',
+    //   documenttype: 9, 
+    //   documentnumber: passageiro.document, 
+    //   birthdate: passageiro.birthDate, 
+    //   gender: passageiro.gender, 
+    //   email: compraDto.holder.email, 
+    //   phone: compraDto.holder.cellPhone, 
+    //   zipcode: compraDto.holder.zipCode, 
+    //   address: compraDto.holder.address, 
+    //   number: compraDto.holder.number, 
+    //   district: compraDto.holder.neighborhood, 
+    //   complement: '', 
+    //   city: compraDto.holder.city, 
+    //   state: compraDto.holder.uf, 
+    //   contactfullname: compraDto.emergencyContact.name,
+    //   contactphone: compraDto.emergencyContact.cellPhone, 
+    //   additionaldata1: '', 
+    //   additionaldata2: '', 
+    //   upgrades: null
+    // })) || [];
+
     const passengers: Passageiro[] = [
-      {
-        name: compraDto.holder.firstName,
-        lastname: compraDto.holder.lastName, 
-        documentcountry: 'Brasil',
-        documenttype: 9, 
-        documentnumber: compraDto.holder.cpfNumber, 
-        birthdate: compraDto.holder.birthDate, 
-        gender: compraDto.holder.gender, 
-        email: compraDto.holder.email, 
-        phone: compraDto.holder.cellPhone, 
-        zipcode: compraDto.holder.zipCode, 
-        address: compraDto.holder.address, 
-        number: compraDto.holder.number, 
-        district: compraDto.holder.neighborhood, 
-        complement: '', 
-        city: compraDto.holder.city, 
-        state: compraDto.holder.uf, 
-        contactfullname: compraDto.emergencyContact.name,
-        contactphone: compraDto.emergencyContact.cellPhone, 
-        additionaldata1: '', 
-        additionaldata2: '', 
-        upgrades: null
-      }
+      titular
     ];
+
+    //passengers.push(...passageiros);
 
     const responseCompra = await firstValueFrom(
       await this.assistCardService.compra({

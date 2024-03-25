@@ -154,7 +154,6 @@ export class NowSysService {
       ),
       map((planoAtualizado: any) => {
         const quotes = planoAtualizado as NowSysCotacao[];
-        console.log(quotes);
         return quotes;
       })
     );

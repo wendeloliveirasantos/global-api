@@ -48,7 +48,7 @@ export interface UniversalAssistanceTravelDadosPagamento {
 export interface UniversalAssistanceTravelObjetoViagem {
   dadosBasicos: UniversalAssistanceTravelDadosBasicos;
   dadosTitular: UniversalAssistanceTravelDadosTitular;
-  dadosIntegrantes: any[]; // Preencher com o tipo correto, se necessário
+  dadosIntegrantes: UniversalAssistanceTravelDadosTitular[];
   dadosProdutos: UniversalAssistanceTravelDadosProdutos;
   dadosPagamento: UniversalAssistanceTravelDadosPagamento;
 }
