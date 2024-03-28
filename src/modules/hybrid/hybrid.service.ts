@@ -99,7 +99,7 @@ export class HybridService {
                 return {
                   description: cobertura.nome,
                   fullDescription: cobertura.premio.faixasImportanciaSegurada[0].franquia,
-                  amount: cobertura.premio.faixasImportanciaSegurada[0].premioTotal,
+                  amount: cobertura.premio.faixasImportanciaSegurada[0].importanciaSegurada,
                   orderIndex: index + 1,
                   coverageReferenceId: cobertura.codigo,
                 };
