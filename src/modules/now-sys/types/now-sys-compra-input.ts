@@ -27,27 +27,3 @@ export interface NowSysCompraInput {
   isB2cProject: boolean;
   promotionalCode: number;
 }
-
-export interface Passageiro {
-  name: string,
-  lastname: string, 
-  documentcountry: string,
-  documenttype: number, 
-  documentnumber: string, 
-  birthdate: string, 
-  gender: string, 
-  email: string, 
-  phone: string, 
-  zipcode: string, 
-  address: string, 
-  number: string, 
-  district: string, 
-  complement: string, 
-  city: string, 
-  state: string, 
-  contactfullname: string,
-  contactphone: string, 
-  additionaldata1: string, 
-  additionaldata2: string, 
-  upgrades: null
-}
