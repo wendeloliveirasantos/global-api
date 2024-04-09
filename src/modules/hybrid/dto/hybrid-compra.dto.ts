@@ -1,31 +1,12 @@
-import { Type } from 'class-transformer';
 import {
   IsArray,
   IsNotEmpty,
   IsNotEmptyObject,
   IsObject,
   IsOptional,
-  IsString,
-  ValidateNested,
+  IsString
 } from 'class-validator';
 
-export class PassengerDto {
-  @IsString()
-  @IsNotEmpty()
-  firstName: string;
-
-  @IsString()
-  @IsNotEmpty()
-  lastName: string;
-
-  @IsString()
-  @IsNotEmpty()
-  gender: string;
-
-  @IsString()
-  @IsNotEmpty()
-  birthDate: string;
-}
 
 export class HybridCompraDto {
   @IsString()
@@ -47,6 +28,8 @@ export class HybridCompraDto {
     firstName: string;
     lastName: string;
     gender: string;
+    companyName: string;
+    cnpjNumber: string;
     cpfNumber: string;
     cellPhone: string;
     birthDate: string;
@@ -60,10 +43,6 @@ export class HybridCompraDto {
     zipCode: string;
   };
 
-  @IsArray()
-  @Type(() => PassengerDto)
-  passengers: PassengerDto[];
-
   @IsObject()
   @IsNotEmptyObject()
   @IsOptional()
@@ -76,13 +55,5 @@ export class HybridCompraDto {
     expiryYear: string;
     installments: number;
     operator: string;
-  };
-
-  @IsObject()
-  @IsNotEmptyObject()
-  @IsNotEmpty()
-  emergencyContact: {
-    name: string;
-    cellPhone: string;
   };
 }

@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { HybridQuoteDto } from './dto/hybrid-quote.dto';
-import { Observable, firstValueFrom, forkJoin, map } from 'rxjs';
+import { firstValueFrom, forkJoin, map } from 'rxjs';
 import { HybridQuoteResponse } from './types/hybrid-quote-response';
 import { InjectModel } from '@nestjs/mongoose';
 import { HybridQuote } from './schemas/hybrid-quote';
@@ -11,9 +11,9 @@ import { HybridCompra } from './schemas/hybrid-compra';
 import { NowSysService } from '../now-sys/now-sys.service';
 import { NowSysTokenResponse } from '../now-sys/types/now-sys-token-response';
 import { OutSideService } from '../outside/outside.service';
-import { NowSysCotacaoInput } from '../now-sys/types/now-sys-cotacao';
 import { NowSysCotacao } from '../now-sys/types/now-sys-response';
-import { NowSysCompraInput, Passageiro } from '../now-sys/types/now-sys-compra-input';
+import { addMonths, format } from 'date-fns';
+import { NowSysTokenCartaoResponse } from '../now-sys/types/now-sys-token-cartao-response';
 
 @Injectable()
 export class HybridService {
@@ -31,19 +31,15 @@ export class HybridService {
 
   async cotacao(hybridQuoteDto: HybridQuoteDto): Promise<any> {
     this.quotes = [];
-    
-    //await this.autenticacaoNowSys();
-
+    await this.autenticacaoNowSys();
     await this.cotacaoNowSys(hybridQuoteDto);
-
     return this.quotes;
   }
 
   async compra(compraDto: HybridCompraDto) {
-    if (compraDto.provider == 'nowSys') {
-      await this.autenticacaoNowSys();
-      return this.compraNowSys(compraDto);
-    }
+    await this.autenticacaoNowSys();
+    var tokenCartao = await this.gerarTokenCartaoNowSys(compraDto);
+    return this.compraNowSys(compraDto, tokenCartao);
   }
 
   consultarCep(cep: string): any {
@@ -57,13 +53,32 @@ export class HybridService {
   }
 
   private async autenticacaoNowSys() {
-    const quotes: HybridQuoteResponse[] = [];
-    
+
     return new Promise<void>((resolve, reject) => {
       this.nowSysService.autenticacao().subscribe({
         next: async (response) => {
           this.nowSystoken = response;
           resolve();
+        },
+        error: (error) => {
+          reject(error);
+        }
+      })
+    });
+  }
+
+  private async gerarTokenCartaoNowSys(compraDto: HybridCompraDto) {
+    return new Promise<NowSysTokenCartaoResponse>((reject) => {
+      this.nowSysService.gerarTokenCartao({
+        number: compraDto.payment.cardNumber,
+        verification_value: compraDto.payment.securityCode,
+        first_name: compraDto.payment.cardholderName,
+        last_name: '',
+        month: compraDto.payment.expiryMonth,
+        year: compraDto.payment.expiryYear,
+      }).subscribe({
+        next: async (response) => {
+          return response;
         },
         error: (error) => {
           reject(error);
@@ -99,7 +114,7 @@ export class HybridService {
                 return {
                   description: cobertura.nome,
                   fullDescription: cobertura.premio.faixasImportanciaSegurada[0].franquia,
-                  amount: cobertura.premio.faixasImportanciaSegurada[0].premioTotal,
+                  amount: cobertura.premio.faixasImportanciaSegurada[0].importanciaSegurada,
                   orderIndex: index + 1,
                   coverageReferenceId: cobertura.codigo,
                 };
@@ -123,7 +138,7 @@ export class HybridService {
     });
   }
 
-  private async compraNowSys(compraDto: HybridCompraDto) {
+  private async compraNowSys(compraDto: HybridCompraDto, tokenCartao: NowSysTokenCartaoResponse) {
     const cotacao = await this.hybridQuoteModel.findById(compraDto.quoteId);
 
     if (!cotacao)
@@ -135,61 +150,66 @@ export class HybridService {
 
     if (!hybridQuote) new HttpException('Product not found', HttpStatus.NOT_FOUND);
 
-    const passengers: Passageiro[] = [
-      {
-        name: compraDto.holder.firstName,
-        lastname: compraDto.holder.lastName, 
-        documentcountry: 'Brasil',
-        documenttype: 9, 
-        documentnumber: compraDto.holder.cpfNumber, 
-        birthdate: compraDto.holder.birthDate, 
-        gender: compraDto.holder.gender, 
-        email: compraDto.holder.email, 
-        phone: compraDto.holder.cellPhone, 
-        zipcode: compraDto.holder.zipCode, 
-        address: compraDto.holder.address, 
-        number: compraDto.holder.number, 
-        district: compraDto.holder.neighborhood, 
-        complement: '', 
-        city: compraDto.holder.city, 
-        state: compraDto.holder.uf, 
-        contactfullname: compraDto.emergencyContact.name,
-        contactphone: compraDto.emergencyContact.cellPhone, 
-        additionaldata1: '', 
-        additionaldata2: '', 
-        upgrades: null
-      }
-    ];
+    const dataAtual = new Date();
+    const dataDaqui12Meses = addMonths(dataAtual, 12);
 
     const responseCompra = await firstValueFrom(
-      await this.nowSysService.compra({
-        productcode: "0V", //hybridQuote.CodigoProduto,
-        ratecode: 39995, //hybridQuote.Rate,
-        departuredate: '',
-        returndate: '',
-        destiny: 0,
-        cash: false,
-        creditcardid: 0,
-        creditcardcpf: compraDto.payment.cardholderCPF,
-        creditcardname: compraDto.payment.cardholderName,
-        creditcardnumber: "5555666677778884", //compraDto.payment.cardNumber,
-        expirationdate: compraDto.payment.expiryMonth + '/' + compraDto.payment.expiryYear,
-        cardholdername: this.obterCodigoOperadoraNowSys(compraDto.payment.operator).toString(),
-        CurrencyCode: 2,
-        instalments: compraDto.payment.installments,
-        contactfullname: compraDto.emergencyContact.name,
-        contactphone: compraDto.emergencyContact.cellPhone,
-        passengers: JSON.stringify(passengers),
-        upgrades: null,
-        markup: 0.0,
-        discount: 0.0,
-        sessiontoken: "9U+DnBS26AFQv+u/CFc/CXENzNsAPJMF0c+hmMjIg3bcgfddxPFgwKZvozHnYB2h/wR3QotROrzm7HW5oPt7/tZztzFDjsA6CCiWqgmZbBg=", //sessionKey,
-        additionalInformation: null,
-        isB2cProject: false,
-        promotionalCode: null,
-        days: null,
-        familyPlan: null,
-        quotation: null
+      await this.nowSysService.inserirProposta({
+        proposta: {
+          dados_proposta: [
+            {
+              produto: { 
+                codigo_produto: hybridQuote.codigo,
+              },
+              data_base_calculo: format(dataAtual, 'yyyy-MM-dd'),
+              vigencia: { 
+                data_inicio: format(dataAtual, 'yyyy-MM-dd'),
+                data_fim: format(dataDaqui12Meses, 'yyyy-MM-dd')
+              },
+              dtemissao: format(dataAtual, 'yyyy-MM-dd'),
+              nrproposta: compraDto.quoteId,
+              estipulante: null,
+              propostaid: null,
+              dtrecepcao: null,
+              situacao: null,
+            }
+          ],
+          segurado: {
+            nome: compraDto.holder.firstName + ' ' + (compraDto.holder.lastName || ''),
+            cpf_cnpj: compraDto.holder.cpfNumber || compraDto.holder.cnpjNumber,
+            endereco: {
+              logradouro: compraDto.holder.address,
+              numero: compraDto.holder.number,
+              complemento: compraDto.holder.address,
+              bairro: compraDto.holder.neighborhood,
+              cidade: compraDto.holder.city,
+              siglaestado: compraDto.holder.uf,
+              cep: compraDto.holder.zipCode,
+            },
+            contato: [
+              {
+                tipo: 'email',
+                descricao: compraDto.holder.email,
+              },
+              {
+                tipo: 'celular',
+                descricao: compraDto.holder.cellPhone,
+              },
+            ],
+          },
+          cobranca: {
+            tipocobranca: 'iugu',
+            cliente_id: 'iugu_token_id_cliente',
+            token_card: tokenCartao.retorno.id,
+            pagamento_id: 'iugu_id_pagamento',
+            fatura_id: 'iugu_id_fatura',
+            url_fatura: 'https://faturas.iugu.com/iugu_id_fatura',
+            assinatura_id: 'iugu_assinatura_id',
+            operadora_cobranca: {
+              nome: 'IUGU',
+            }
+          },
+        }
       }),
     );
 
@@ -200,9 +220,9 @@ export class HybridService {
     );
     if (!customer) {
       customer = await this.customerService.createCustomer({
-        firstName: compraDto.holder.firstName,
+        firstName: compraDto.holder.firstName || compraDto.holder.companyName,
         lastName: compraDto.holder.lastName,
-        cpfNumber: compraDto.holder.cpfNumber,
+        cpfNumber: compraDto.holder.cpfNumber || compraDto.holder.cnpjNumber,
         cellPhone: compraDto.holder.cellPhone,
         address: compraDto.holder.address,
         zipCode: compraDto.holder.zipCode,
@@ -221,31 +241,5 @@ export class HybridService {
     });
     
     return responseCompra;
-  }
-
-  private obterCodigoOperadoraUniversal(operadora) {
-    switch (operadora.toLowerCase()) {
-      case 'amex':
-        return 1;
-      case 'visa':
-        return 2;
-      case 'mastercard':
-        return 3;
-      default:
-        return null;
-    }
-  }
-
-  private obterCodigoOperadoraNowSys(operadora) {
-    switch (operadora.toLowerCase()) {
-      case 'amex':
-        return 3;
-      case 'visa':
-        return 1;
-      case 'mastercard':
-        return 2;
-      default:
-        return null;
-    }
   }
 }
