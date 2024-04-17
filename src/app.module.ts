@@ -12,6 +12,8 @@ import { OutSideModule } from './modules/outside/outside.module';
 import nowSysConfig from './config/now-sys.config';
 import { NowSysModule } from './modules/now-sys/now-sys.module';
 import { HybridModule } from './modules/hybrid/hybrid.module';
+import { UserModule } from './modules/user/user.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { HybridModule } from './modules/hybrid/hybrid.module';
     HybridModule,
     TravelModule,
     CustomerModule,
-    OutSideModule
+    OutSideModule,
+    AdminModule,
+    UserModule
   ],
 })
 export class AppModule {}
