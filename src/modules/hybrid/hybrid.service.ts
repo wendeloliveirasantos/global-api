@@ -68,17 +68,17 @@ export class HybridService {
   }
 
   private async gerarTokenCartaoNowSys(compraDto: HybridCompraDto) {
-    return new Promise<NowSysTokenCartaoResponse>((reject) => {
+    return new Promise<NowSysTokenCartaoResponse>((resolve, reject) => {
       this.nowSysService.gerarTokenCartao({
         number: compraDto.payment.cardNumber,
         verification_value: compraDto.payment.securityCode,
-        first_name: compraDto.payment.cardholderName,
-        last_name: '',
+        first_name: compraDto.payment.cardholderName.split(' ')[0],
+        last_name: compraDto.payment.cardholderName.split(' ').slice(1).join(' '),
         month: compraDto.payment.expiryMonth,
         year: compraDto.payment.expiryYear,
       }).subscribe({
         next: async (response) => {
-          return response;
+          resolve(response);
         },
         error: (error) => {
           reject(error);
@@ -120,6 +120,13 @@ export class HybridService {
                 };
               }),
             };
+            inputProduto.coverage = inputProduto.coverage.concat(produto.assistencias.map((assistencia, index) => ({
+              description: assistencia.nome,
+              fullDescription: assistencia.nome,
+              amount: assistencia.importanciasegurada.toString(),
+              orderIndex: produto.coberturas.length + index + 1,
+              coverageReferenceId: assistencia.codigo,
+            })));
             const hybridQuote = await this.hybridQuoteModel.create({
               provider: 'nowSys',
               business: hybridQuoteDto.business,
@@ -140,7 +147,6 @@ export class HybridService {
 
   private async compraNowSys(compraDto: HybridCompraDto, tokenCartao: NowSysTokenCartaoResponse) {
     const cotacao = await this.hybridQuoteModel.findById(compraDto.quoteId);
-
     if (!cotacao)
       throw new HttpException('Quote not found', HttpStatus.NOT_FOUND);
     

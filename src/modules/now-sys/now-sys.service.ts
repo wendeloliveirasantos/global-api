@@ -158,7 +158,7 @@ export class NowSysService {
     return this.httpService.post(url, input, { headers }).pipe(
       map((res) => {
         if (res.data.status == 'Sucesso') {
-          return res.data.retorno
+          return res.data
         }
         else{
           throw new BadRequestException(
@@ -230,6 +230,33 @@ export class NowSysService {
       ),
       map((planoAtualizado: any) => {
         const quotes = planoAtualizado as NowSysCotacao[];
+        const primeiroQuote = quotes.find(quote => quote.nome.toUpperCase().includes("VIDA") || quote.nome.toUpperCase().includes("AP"));
+
+        if (primeiroQuote) {
+          const faixas = primeiroQuote.coberturas[0].premio.faixasImportanciaSegurada.map(faixa => String(faixa));
+          
+          const gerarFaixaImportanciaSegurada = (faixa: string, taxa: number) => ({
+            importanciaSegurada: faixa,
+            premioTarifario: 0.0,
+            premioTotal: this.calculadoraPremio(faixa, taxa),
+            fatorTarifario: 0.0,
+            franquia: "Não há"
+          });
+          
+          faixas.forEach((faixa, index) => {
+            if (index === 0) {
+              primeiroQuote.coberturas.forEach(cobertura => {
+                cobertura.premio.faixasImportanciaSegurada = [gerarFaixaImportanciaSegurada(faixa, 1 / primeiroQuote.coberturas.length)];
+              });
+            } else {
+              const novoQuote = JSON.parse(JSON.stringify(primeiroQuote));
+              novoQuote.coberturas.forEach(cobertura => {
+                cobertura.premio.faixasImportanciaSegurada = [gerarFaixaImportanciaSegurada(faixa, 1 / primeiroQuote.coberturas.length)];
+              });
+              quotes.push(novoQuote);
+            }
+          });
+        }
         return quotes;
       })
     );
@@ -262,5 +289,18 @@ export class NowSysService {
       nowSysLogin,
       nowSysSenha
     };
+  }
+
+  private calculadoraPremio(importanciaSegurada: string, taxa: number) {
+    switch (importanciaSegurada) {
+      case '30000':
+          return 16.99 * taxa;
+      case '50000':
+          return 19.99 * taxa;
+      case '100000':
+          return 30.99 * taxa;
+      default:
+          return 0;
+    }
   }
 }
