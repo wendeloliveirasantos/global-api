@@ -17,6 +17,7 @@ import { OutSideService } from '../outside/outside.service';
 import { AssistCardCotacaoInput } from '../assist-card/types/assist-card-cotacao';
 import { AssistCardCotacao } from '../assist-card/types/assist-card-response';
 import { AssistCardCompraInput, Passageiro } from '../assist-card/types/assist-card-compra-input';
+import { addMonths, format } from 'date-fns';
 
 @Injectable()
 export class TravelService {
@@ -273,7 +274,7 @@ export class TravelService {
           codigoTarifaAcordo: 0,
         },
         dadosPagamento: {
-          codigoOperadora: this.obterCodigoOperadoraUniversal(compraDto.payment.operator),
+          codigoOperadora: this.obterCodigoOperadoraUniversal(this.obterOperadoraCartao(compraDto.payment.cardNumber)),
           nomeTitularCartao: compraDto.payment.cardholderName,
           cpfTitular: compraDto.payment.cardholderCPF,
           numeroCartao: compraDto.payment.cardNumber,
@@ -296,6 +297,7 @@ export class TravelService {
         lastName: compraDto.holder.lastName,
         cpfNumber: compraDto.holder.cpfNumber,
         cellPhone: compraDto.holder.cellPhone,
+        email: compraDto.holder.email,
         address: compraDto.holder.address,
         zipCode: compraDto.holder.zipCode,
         number: compraDto.holder.number,
@@ -392,9 +394,9 @@ export class TravelService {
         creditcardid: 0,
         creditcardcpf: compraDto.payment.cardholderCPF,
         creditcardname: compraDto.payment.cardholderName,
-        creditcardnumber: "5555666677778884", //compraDto.payment.cardNumber,
+        creditcardnumber: compraDto.payment.cardNumber,
         expirationdate: compraDto.payment.expiryMonth + '/' + compraDto.payment.expiryYear,
-        cardholdername: this.obterCodigoOperadoraAssistCard(compraDto.payment.operator).toString(),
+        cardholdername: this.obterCodigoOperadoraAssistCard(this.obterOperadoraCartao(compraDto.payment.cardNumber)).toString(),
         CurrencyCode: 2,
         instalments: compraDto.payment.installments,
         contactfullname: compraDto.emergencyContact.name,
@@ -434,6 +436,8 @@ export class TravelService {
       });
     }
 
+    responseCompra.Emissiondate = format(new Date(), 'yyyy-MM-dd');
+
     await this.travelCompraModel.create({
       contato: customer,
       provider: 'assistCard',
@@ -443,7 +447,7 @@ export class TravelService {
     return responseCompra;
   }
 
-  private obterCodigoOperadoraUniversal(operadora) {
+  private obterCodigoOperadoraUniversal(operadora: string) {
     switch (operadora.toLowerCase()) {
       case 'amex':
         return 1;
@@ -456,7 +460,7 @@ export class TravelService {
     }
   }
 
-  private obterCodigoOperadoraAssistCard(operadora) {
+  private obterCodigoOperadoraAssistCard(operadora: string) {
     switch (operadora.toLowerCase()) {
       case 'amex':
         return 3;
@@ -465,6 +469,31 @@ export class TravelService {
       case 'mastercard':
         return 2;
       default:
+        return null;
+    }
+  }
+
+  private obterOperadoraCartao(numeroCartao: string): string {
+    const visaRegex = /^4\d{12}(?:\d{3})?$/;
+    const mastercardRegex = /^5[1-5]\d{14}$/;
+    const amexRegex = /^3[47]\d{13}$/;
+    const discoverRegex = /^6(?:011|5\d{2})\d{12}$/;
+    const dinersClubRegex = /^3(?:0[0-5]|[68]\d)\d{11}$/;
+    const jcbRegex = /^(?:2131|1800|35\d{3})\d{11}$/;
+
+    if (visaRegex.test(numeroCartao)) {
+        return 'visa';
+    } else if (mastercardRegex.test(numeroCartao)) {
+        return 'mastercard';
+    } else if (amexRegex.test(numeroCartao)) {
+        return 'amex';
+    } else if (discoverRegex.test(numeroCartao)) {
+        return 'discover';
+    } else if (dinersClubRegex.test(numeroCartao)) {
+        return 'dinersclub';
+    } else if (jcbRegex.test(numeroCartao)) {
+        return 'jcb';
+    } else {
         return null;
     }
   }

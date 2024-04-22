@@ -19,6 +19,9 @@ export class Customer extends Document {
   cellPhone: string;
 
   @Prop()
+  email: string;
+
+  @Prop()
   birthDate: string;
 
   @Prop()

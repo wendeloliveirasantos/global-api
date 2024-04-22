@@ -18,6 +18,8 @@ import { NowSysTokenCartaoInput } from './types/now-sys-token-cartao-input';
 import { NowSysTokenCartaoResponse } from './types/now-sys-token-cartao-response';
 import { NowSysInserirPropostaInput } from './types/now-sys-inserir-proposta-input';
 import { NowSysInserirPropostaResponse } from './types/now-sys-inserir-proposta-response';
+import { NowSysBuscaPremioInput } from './types/now-sys-busca-premio-input';
+import { NowSysBuscaPremioResponse } from './types/now-sys-busca-premio-response';
 
 
 @Injectable()
@@ -174,6 +176,45 @@ export class NowSysService {
       }),
     );
   }
+  
+  buscarPremio(dto: NowSysBuscaPremioInput): Observable<NowSysBuscaPremioResponse> {
+    const {
+      nowSysUrl
+    } = this.getConfig();
+
+    const headers = {
+      authorization: this.token.value.token
+    };
+
+    const url = nowSysUrl + '/viap/cotacao';
+
+    const queryParams = new URLSearchParams();
+    queryParams.append('idade', dto.idade);
+    queryParams.append('codigoProduto', dto.codigoProduto);
+    queryParams.append('IS', dto.IS);
+
+    const urlQuery = url + '?' + queryParams.toString();
+    
+    return this.httpService
+      .get(urlQuery, {
+        headers,
+      })
+      .pipe(
+        map((res) => 
+          {
+            
+            const itemsArray = JSON.parse(res.data.items);
+            itemsArray[0].coberturas = JSON.parse(itemsArray[0].coberturas);
+            console.log(itemsArray[0]);
+            return itemsArray[0]
+          }),
+        catchError(() => {
+          throw new ForbiddenException(
+            'Now Sys not available to quote',
+          );
+        }),
+      );
+  }
 
   inserirProposta(
     dto: NowSysInserirPropostaInput
@@ -211,53 +252,63 @@ export class NowSysService {
     );
   }
 
-  cotacao(
-    dto: NowSysCotacaoInput,
-  ): Observable<NowSysCotacao[]> {
-    
+  cotacao(dto: NowSysCotacaoInput): Observable<NowSysCotacao[]> {
     return this.listaProdutos().pipe(
-      switchMap((res) => {
+      switchMap(res => {
         const planos = res.items.filter(item => item.nome.includes(dto.business));
         const buscaProdutoObservables = planos.map(plano =>
-          this.buscarProduto(parseInt(plano.codigo)).pipe(
-            map((res) => ({ ...plano, ...res.produto.caracteristicas }))
-          )
+          this.buscarProduto(parseInt(plano.codigo))
         );
-        return of(buscaProdutoObservables);
-      }),
-      switchMap(buscaProdutoObservables =>
-        buscaProdutoObservables.length ? forkJoin(buscaProdutoObservables) : of([])
-      ),
-      map((planoAtualizado: any) => {
-        const quotes = planoAtualizado as NowSysCotacao[];
-        const primeiroQuote = quotes.find(quote => quote.nome.toUpperCase().includes("VIDA") || quote.nome.toUpperCase().includes("AP"));
-
-        if (primeiroQuote) {
-          const faixas = primeiroQuote.coberturas[0].premio.faixasImportanciaSegurada.map(faixa => String(faixa));
-          
-          const gerarFaixaImportanciaSegurada = (faixa: string, taxa: number) => ({
-            importanciaSegurada: faixa,
-            premioTarifario: 0.0,
-            premioTotal: this.calculadoraPremio(faixa, taxa),
-            fatorTarifario: 0.0,
-            franquia: "Não há"
-          });
-          
-          faixas.forEach((faixa, index) => {
-            if (index === 0) {
-              primeiroQuote.coberturas.forEach(cobertura => {
-                cobertura.premio.faixasImportanciaSegurada = [gerarFaixaImportanciaSegurada(faixa, 1 / primeiroQuote.coberturas.length)];
-              });
-            } else {
-              const novoQuote = JSON.parse(JSON.stringify(primeiroQuote));
-              novoQuote.coberturas.forEach(cobertura => {
-                cobertura.premio.faixasImportanciaSegurada = [gerarFaixaImportanciaSegurada(faixa, 1 / primeiroQuote.coberturas.length)];
-              });
-              quotes.push(novoQuote);
-            }
-          });
-        }
-        return quotes;
+  
+        return forkJoin(buscaProdutoObservables).pipe(
+          switchMap(buscaProduto => {
+            const buscarPremioObservables = buscaProduto.flatMap(produto => {
+              const cotacao = produto.produto.caracteristicas;
+  
+              if (cotacao.nome.toUpperCase().includes("VIDA") || cotacao.nome.toUpperCase().includes("AP")) {
+                const faixas = cotacao.coberturas[0].premio.faixasImportanciaSegurada.map(faixa => String(faixa));
+  
+                return faixas.map(faixa => 
+                  this.buscarPremio({ idade: this.calcularIdade(dto.birthDate).toString(), codigoProduto: cotacao.codigo, IS: faixa })
+                );
+              } else {
+                return of(null);
+              }
+            });
+  
+            return forkJoin(buscarPremioObservables).pipe(
+              map(premiosResponses => {
+                const listCotacao: NowSysCotacao[] = [];
+  
+                buscaProduto.forEach((produto, index) => {
+                  const cotacao = produto.produto.caracteristicas;
+  
+                  if (cotacao.nome.toUpperCase().includes("VIDA") || cotacao.nome.toUpperCase().includes("AP")) {
+                    const gerarFaixaImportanciaSegurada = (faixa: string, premio: number) => ({
+                      importanciaSegurada: faixa,
+                      premioTarifario: 0.0,
+                      premioTotal: premio,
+                      fatorTarifario: 0.0,
+                      franquia: "Não há"
+                    });
+                    premiosResponses.forEach((premio, index) => {
+                      const novoQuote = JSON.parse(JSON.stringify(cotacao)) as NowSysCotacao;
+                      novoQuote.coberturas.forEach((cobertura, indexCobertura) => {
+                        const premioValor = premio.coberturas.find(c => c.codigo == cobertura.codigo).premio;
+                        cobertura.premio.faixasImportanciaSegurada = [gerarFaixaImportanciaSegurada(premioValor.importanciaSegurada, premioValor.valor_premio_comercial)];
+                      });
+                      listCotacao.push(novoQuote);
+                    });
+                  } else {
+                    listCotacao.push(produto.produto.caracteristicas);
+                  }
+                });
+  
+                return listCotacao;
+              })
+            );
+          })
+        );
       })
     );
   }
@@ -291,16 +342,19 @@ export class NowSysService {
     };
   }
 
-  private calculadoraPremio(importanciaSegurada: string, taxa: number) {
-    switch (importanciaSegurada) {
-      case '30000':
-          return 16.99 * taxa;
-      case '50000':
-          return 19.99 * taxa;
-      case '100000':
-          return 30.99 * taxa;
-      default:
-          return 0;
+  private calcularIdade(dataNascimento: string) {
+    const hoje = new Date();
+    const dataNascimentoDate = new Date(dataNascimento);
+    let idade = hoje.getFullYear() - dataNascimentoDate.getFullYear();
+    const mesAtual = hoje.getMonth() + 1;
+    const diaAtual = hoje.getDate();
+    const mesNascimento = dataNascimentoDate.getMonth() + 1;
+    const diaNascimento = dataNascimentoDate.getDate();
+  
+    if (mesAtual < mesNascimento || (mesAtual === mesNascimento && diaAtual < diaNascimento)) {
+      idade--;
     }
+  
+    return idade;
   }
 }

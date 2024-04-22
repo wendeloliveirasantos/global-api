@@ -19,6 +19,7 @@ export interface DadosProposta {
 
 export interface Produto {
   codigo_produto: string;
+  nome_produto: string;
 }
 
 export interface Vigencia {
@@ -90,7 +91,7 @@ export interface Cobranca {
   url_fatura: string;
   assinatura_id: string;
   operadora_cobranca: OperadoraCobranca;
-  //parcelas_cobradas: ParcelasCobradas;
+  parcelas_cobradas: ParcelasCobradas;
 }
 
 export interface OperadoraCobranca {
@@ -98,6 +99,7 @@ export interface OperadoraCobranca {
 }
 
 export interface ParcelasCobradas {
+  nrparcela: number;
   dtvencimento: string;
   dtrecebido: string;
   valorparcela: number;

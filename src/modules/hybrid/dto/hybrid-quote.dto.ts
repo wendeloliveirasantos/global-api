@@ -5,6 +5,7 @@ import {
   IsArray,
   ArrayNotEmpty,
   ArrayMinSize,
+  IsEmpty,
 } from 'class-validator';
 
 export class HybridQuoteDto {
@@ -15,4 +16,8 @@ export class HybridQuoteDto {
   @ApiProperty({ example: 500 })
   @IsNotEmpty()
   range: number;
+
+  @ApiProperty({ example: '1990-01-01' })
+  @IsOptional()
+  birthDate: string;
 }

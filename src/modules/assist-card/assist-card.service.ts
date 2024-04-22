@@ -472,7 +472,7 @@ export class AssistCardService {
     return this.httpService.post(url, input, { headers }).pipe(
       map((res) => {
         if (res.data.success) {
-          return res.data
+          return res.data.result
         }
         else{
           throw new BadRequestException(

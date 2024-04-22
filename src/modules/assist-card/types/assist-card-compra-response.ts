@@ -1,6 +1,7 @@
 interface AssistCardCompraResponse {
   EmissoesResponseAPI: EmissoesResponseAPI[];
   Totalamount: number;
+  Emissiondate: string;
 }
 
 interface EmissoesResponseAPI {

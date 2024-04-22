@@ -92,7 +92,8 @@ export class HybridService {
     
     return new Promise<void>((resolve, reject) => {
       this.nowSysService.cotacao({
-        business: hybridQuoteDto.business
+        business: hybridQuoteDto.business,
+        birthDate: hybridQuoteDto.birthDate
       }).subscribe({
         next: async (response) => {
           const result = response.filter(item => {
@@ -158,6 +159,7 @@ export class HybridService {
 
     const dataAtual = new Date();
     const dataDaqui12Meses = addMonths(dataAtual, 12);
+    const dataDaqui1Meses = addMonths(dataAtual, 1);
 
     const responseCompra = await firstValueFrom(
       await this.nowSysService.inserirProposta({
@@ -166,6 +168,7 @@ export class HybridService {
             {
               produto: { 
                 codigo_produto: hybridQuote.codigo,
+                nome_produto: hybridQuote.nome,
               },
               data_base_calculo: format(dataAtual, 'yyyy-MM-dd'),
               vigencia: { 
@@ -213,6 +216,16 @@ export class HybridService {
             assinatura_id: 'iugu_assinatura_id',
             operadora_cobranca: {
               nome: 'IUGU',
+            },
+            parcelas_cobradas: {
+              nrparcela: 1,
+              dtvencimento: format(dataDaqui1Meses, 'yyyy-MM-dd'),
+              dtrecebido: format(dataAtual, 'yyyy-MM-dd'),
+              valorparcela: hybridQuote.coberturas.reduce((total, cobertura) => { 
+                return total + (cobertura.premio.faixasImportanciaSegurada[0].premioTotal || 0);}, 0),
+              valor_recebido: hybridQuote.coberturas.reduce((total, cobertura) => { 
+                return total + (cobertura.premio.faixasImportanciaSegurada[0].premioTotal || 0);}, 0),
+              identificacao: 'iugu_id_pagamento',
             }
           },
         }
@@ -230,6 +243,7 @@ export class HybridService {
         lastName: compraDto.holder.lastName,
         cpfNumber: compraDto.holder.cpfNumber || compraDto.holder.cnpjNumber,
         cellPhone: compraDto.holder.cellPhone,
+        email: compraDto.holder.email,
         address: compraDto.holder.address,
         zipCode: compraDto.holder.zipCode,
         number: compraDto.holder.number,
