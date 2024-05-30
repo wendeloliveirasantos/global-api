@@ -202,10 +202,8 @@ export class NowSysService {
       .pipe(
         map((res) => 
           {
-            
             const itemsArray = JSON.parse(res.data.items);
             itemsArray[0].coberturas = JSON.parse(itemsArray[0].coberturas);
-            console.log(itemsArray[0]);
             return itemsArray[0]
           }),
         catchError(() => {
