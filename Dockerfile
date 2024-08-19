@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Expor a porta que o Nest.js usará
-EXPOSE 4000
+EXPOSE 3000
 
 # Comando para rodar o servidor Nest.js
 CMD ["npm", "run", "start:prod"]
