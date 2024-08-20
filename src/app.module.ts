@@ -35,3 +35,4 @@ import { AdminModule } from './modules/admin/admin.module';
   ],
 })
 export class AppModule {}
+console.log('MONGO_URL:', process.env.MONGO_URL);
