@@ -22,7 +22,7 @@ import { AdminModule } from './modules/admin/admin.module';
       load: [appConfig, universalAssistanceTravelConfig, assistCardConfig, nowSysConfig],
       envFilePath: ['.env'],
     }),
-    MongooseModule.forRoot('mongodb://root:p1Hh7P0juRB0OIsZlxfyaHZwq9ncOqGOCJwggxyOzkwXYXsfT4xmAstzmp9kjL42@92.113.33.10:5432?directConnection=true'),
+    MongooseModule.forRoot('mongodb://root:p1Hh7P0juRB0OIsZlxfyaHZwq9ncOqGOCJwggxyOzkwXYXsfT4xmAstzmp9kjL42@92.113.33.10:5432/global?authSource=admin&directConnection=true'),
     UniversalAssistanceModule,
     AssistCardModule,
     NowSysModule,
