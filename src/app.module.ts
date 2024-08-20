@@ -22,7 +22,7 @@ import { AdminModule } from './modules/admin/admin.module';
       load: [appConfig, universalAssistanceTravelConfig, assistCardConfig, nowSysConfig],
       envFilePath: ['.env'],
     }),
-    MongooseModule.forRoot(process.env.MONGO_URL),
+    MongooseModule.forRoot('mongodb://root:p1Hh7P0juRB0OIsZlxfyaHZwq9ncOqGOCJwggxyOzkwXYXsfT4xmAstzmp9kjL42@lcgo4kgcswoo4cwokco4g4ks:27017/global?directConnection=true'),
     UniversalAssistanceModule,
     AssistCardModule,
     NowSysModule,
@@ -35,4 +35,3 @@ import { AdminModule } from './modules/admin/admin.module';
   ],
 })
 export class AppModule {}
-console.log('MONGO_URL:', process.env.MONGO_URL);
