@@ -28,7 +28,7 @@ export class NowSysService {
   public token: BehaviorSubject<NowSysTokenResponse>;
 
   constructor(
-    private configService: ConfigService<AllConfigType>,
+    private configService: ConfigService,
     private readonly httpService: HttpService,
   ) {
     this.token = new BehaviorSubject<NowSysTokenResponse>(null);
@@ -37,21 +37,21 @@ export class NowSysService {
   private readonly logger = new Logger(NowSysService.name);
   
   autenticacao(): Observable<NowSysTokenResponse> {
-    const {
-      nowSysUrl,
-      nowSysLogin,
-      nowSysSenha
-    } = this.getConfig();
+    // const {
+    //   nowSysUrl,
+    //   nowSysLogin,
+    //   nowSysSenha
+    // } = this.getConfig();
 
     const headers = {
     };
 
     const input: NowSysTokenInput = {
-      login: nowSysLogin,
-      senha: nowSysSenha
+      login: this.configService.get<string>('NOW_SYS_LOGIN'),
+      senha: this.configService.get<string>('NOW_SYS_SENHA')
     };
 
-    const url = nowSysUrl + '/login';
+    const url = this.configService.get<string>('NOW_SYS_URL') + '/login';
     
     return this.httpService.post(url, input, { headers }).pipe(
       map((res) => { 
@@ -67,15 +67,15 @@ export class NowSysService {
   }
 
   validaToken(): Observable<NowSysValidaTokenResponse> {
-    const {
-      nowSysUrl
-    } = this.getConfig();
+    // const {
+    //   nowSysUrl
+    // } = this.getConfig();
 
     const headers = {
       authorization: this.token.value.token
     };
 
-    const url = nowSysUrl + '/auth';
+    const url = this.configService.get<string>('NOW_SYS_URL') + '/auth';
     
     return this.httpService.get(url, { headers }).pipe(
       map((res) => res.data),
@@ -89,15 +89,15 @@ export class NowSysService {
   }
 
   listaProdutos(): Observable<NowSysProdutosResponse> {
-    const {
-      nowSysUrl
-    } = this.getConfig();
+    // const {
+    //   nowSysUrl
+    // } = this.getConfig();
 
     const headers = {
       authorization: this.token.value.token
     };
 
-    const url = nowSysUrl + '/produtos';
+    const url = this.configService.get<string>('NOW_SYS_URL') + '/produtos';
 
     return this.httpService
       .get(url, {
@@ -117,15 +117,15 @@ export class NowSysService {
   }
 
   buscarProduto(codigo: number): Observable<NowSysProdutoResponse> {
-    const {
-      nowSysUrl
-    } = this.getConfig();
+    // const {
+    //   nowSysUrl
+    // } = this.getConfig();
 
     const headers = {
       authorization: this.token.value.token
     };
 
-    const url = nowSysUrl + '/produtos/' + codigo;
+    const url = this.configService.get<string>('NOW_SYS_URL') + '/produtos/' + codigo;
 
     return this.httpService
       .get(url, {
@@ -144,9 +144,9 @@ export class NowSysService {
   gerarTokenCartao(
     dto: NowSysTokenCartaoInput
   ): Observable<NowSysTokenCartaoResponse> {
-    const {
-      nowSysUrl
-    } = this.getConfig();
+    // const {
+    //   nowSysUrl
+    // } = this.getConfig();
 
     const headers = {
       authorization: this.token.value.token
@@ -156,7 +156,7 @@ export class NowSysService {
       ...dto
     };
 
-    const url = nowSysUrl + '/cobranca/token';
+    const url = this.configService.get<string>('NOW_SYS_URL') + '/cobranca/token';
     return this.httpService.post(url, input, { headers }).pipe(
       map((res) => {
         if (res.data.status == 'Sucesso') {
@@ -178,15 +178,15 @@ export class NowSysService {
   }
   
   buscarPremio(dto: NowSysBuscaPremioInput): Observable<NowSysBuscaPremioResponse> {
-    const {
-      nowSysUrl
-    } = this.getConfig();
+    // const {
+    //   nowSysUrl
+    // } = this.getConfig();
 
     const headers = {
       authorization: this.token.value.token
     };
 
-    const url = nowSysUrl + '/viap/cotacao';
+    const url = this.configService.get<string>('NOW_SYS_URL') + '/viap/cotacao';
 
     const queryParams = new URLSearchParams();
     queryParams.append('idade', dto.idade);
@@ -217,9 +217,9 @@ export class NowSysService {
   inserirProposta(
     dto: NowSysInserirPropostaInput
   ): Observable<NowSysInserirPropostaResponse> {
-    const {
-      nowSysUrl
-    } = this.getConfig();
+    // const {
+    //   nowSysUrl
+    // } = this.getConfig();
 
     const headers = {
       authorization: this.token.value.token
@@ -229,7 +229,7 @@ export class NowSysService {
       ...dto
     };
 
-    const url = nowSysUrl + '/proposta';
+    const url = this.configService.get<string>('NOW_SYS_URL') + '/proposta';
     return this.httpService.post(url, input, { headers }).pipe(
       map((res) => {
         if (res.data.status == 'Sucesso') {
@@ -311,34 +311,34 @@ export class NowSysService {
     );
   }
 
-  private getConfig() {
-    const nowSysUrl = this.configService.get(
-      'nowSys.nowSysUrl',
-      {
-        infer: true,
-      },
-    );
+  // private getConfig() {
+  //   const nowSysUrl = this.configService.get(
+  //     'nowSys.nowSysUrl',
+  //     {
+  //       infer: true,
+  //     },
+  //   );
 
-    const nowSysLogin = this.configService.get(
-      'nowSys.nowSysLogin',
-      {
-        infer: true,
-      },
-    );
+  //   const nowSysLogin = this.configService.get(
+  //     'nowSys.nowSysLogin',
+  //     {
+  //       infer: true,
+  //     },
+  //   );
 
-    const nowSysSenha = this.configService.get(
-      'nowSys.nowSysSenha',
-      {
-        infer: true,
-      },
-    );
+  //   const nowSysSenha = this.configService.get(
+  //     'nowSys.nowSysSenha',
+  //     {
+  //       infer: true,
+  //     },
+  //   );
 
-    return {
-      nowSysUrl,
-      nowSysLogin,
-      nowSysSenha
-    };
-  }
+  //   return {
+  //     nowSysUrl,
+  //     nowSysLogin,
+  //     nowSysSenha
+  //   };
+  // }
 
   private calcularIdade(dataNascimento: string) {
     const hoje = new Date();
