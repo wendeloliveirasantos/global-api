@@ -43,6 +43,9 @@ export class NowSysService {
     //   nowSysSenha
     // } = this.getConfig();
 
+    console.log(this.configService.get<string>('NOW_SYS_URL'));
+    console.log(this.configService.get<string>('NOW_SYS_LOGIN'));
+    console.log(this.configService.get<string>('NOW_SYS_SENHA'));
     const headers = {
     };
 
