@@ -9,9 +9,8 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import validationOptions from './utils/validation-options';
-
 require('dotenv').config();
-console.log('ENV Variables:', process.env);
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -31,6 +30,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe(validationOptions));
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
+  console.log('ENV Variables:', process.env.NOW_SYS_LOGIN);
+  
   //await app.listen(configService.getOrThrow('app.port', { infer: true }));
   await app.listen(4000, '0.0.0.0');
 }
