@@ -23,14 +23,9 @@ export default registerAs<AssistCard>(
     validateConfig(process.env, EnvironmentVariablesValidator);
 
     return {
-      assistCardUrl:
-        process.env.ASSIST_CARD_URL ?? '[]',
-      
-        assistCardLogin:
-        process.env.ASSIST_CARD_LOGIN ?? '[]',
-
-        assistCardSenha:
-        process.env.ASSIST_CARD_SENHA ?? '[]',
+      assistCardUrl: 'https://portalbr.assistcard.com',
+      assistCardLogin: '31357',
+      assistCardSenha: 'zKZrNJTs+pQNwnW+QG13AQ==',
     };
   },
 );

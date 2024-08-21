@@ -31,19 +31,11 @@ export default registerAs<UniversalAssistanceTravel>(
     validateConfig(process.env, EnvironmentVariablesValidator);
 
     return {
-      universalAssistanceTravelUrl:
-        process.env.UNIVERSAL_ASSISTANCE_TRAVEL_URL ?? '[]',
-      universalAssistanceTravelLogin:
-        process.env.UNIVERSAL_ASSISTANCE_TRAVEL_LOGIN ?? '[]',
-
-      universalAssistanceTravelSenha:
-        process.env.UNIVERSAL_ASSISTANCE_TRAVEL_SENHA ?? '[]',
-
-      universalAssistanceTravelTipoViagem:
-        +process.env.UNIVERSAL_ASSISTANCE_TRAVEL_TIPO_VIAGEM ?? 1,
-
-      universalAssistanceTravelTipoTarifa:
-        +process.env.UNIVERSAL_ASSISTANCE_TRAVEL_TIPO_TARIFA ?? 1,
+      universalAssistanceTravelUrl: 'https://apihomologacao.universal-assistance.com',
+      universalAssistanceTravelLogin: 'tes.te',
+      universalAssistanceTravelSenha: 'tes.te',
+      universalAssistanceTravelTipoViagem: 1,
+      universalAssistanceTravelTipoTarifa: 1,
     };
   },
 );

@@ -14,12 +14,13 @@ import { NowSysModule } from './modules/now-sys/now-sys.module';
 import { HybridModule } from './modules/hybrid/hybrid.module';
 import { UserModule } from './modules/user/user.module';
 import { AdminModule } from './modules/admin/admin.module';
+import outsideConfig from './config/outside.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, universalAssistanceTravelConfig, assistCardConfig, nowSysConfig]
+      load: [appConfig, universalAssistanceTravelConfig, assistCardConfig, nowSysConfig, outsideConfig]
     }),
     MongooseModule.forRoot('mongodb://root:p1Hh7P0juRB0OIsZlxfyaHZwq9ncOqGOCJwggxyOzkwXYXsfT4xmAstzmp9kjL42@92.113.33.10:5432/global?authSource=admin&directConnection=true'),
     UniversalAssistanceModule,
