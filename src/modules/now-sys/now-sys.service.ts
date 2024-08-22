@@ -42,7 +42,7 @@ export class NowSysService {
       nowSysLogin,
       nowSysSenha
     } = this.getConfig();
-
+    
     const headers = {
     };
 

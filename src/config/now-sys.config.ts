@@ -23,14 +23,9 @@ export default registerAs<NowSys>(
     validateConfig(process.env, EnvironmentVariablesValidator);
 
     return {
-      nowSysUrl:
-        process.env.NOW_SYS_URL ?? '[]',
-      
-        nowSysLogin:
-        process.env.NOW_SYS_LOGIN ?? '[]',
-
-        nowSysSenha:
-        process.env.NOW_SYS_SENHA ?? '[]',
+      nowSysUrl: 'https://saas-dev.nowseguros.seg.br',
+      nowSysLogin: 'globalcorp@globalcorp.com.br',
+      nowSysSenha: 'global2024',
     };
   },
 );

@@ -28,6 +28,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe(validationOptions));
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-  await app.listen(configService.getOrThrow('app.port', { infer: true }));
+  await app.listen(configService.getOrThrow('app.port', { infer: true }), '0.0.0.0');
+  //await app.listen(4000, '0.0.0.0');
 }
 bootstrap();

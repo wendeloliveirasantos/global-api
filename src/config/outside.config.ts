@@ -15,8 +15,7 @@ export default registerAs<OutSide>(
     validateConfig(process.env, EnvironmentVariablesValidator);
 
     return {
-      cepUrl:
-        process.env.CEP_URL ?? '[]'
+      cepUrl: 'https://viacep.com.br'
     };
   },
 );
