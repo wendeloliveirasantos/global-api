@@ -385,8 +385,8 @@ export class TravelService {
 
     const responseCompra = await firstValueFrom(
       await this.assistCardService.compra({
-        productcode: "0V", //travelQuote.CodigoProduto,
-        ratecode: 39995, //travelQuote.Rate,
+        productcode: "B70", //travelQuote.CodigoProduto,
+        ratecode: 1709, //travelQuote.Rate,
         departuredate: travelQuote.departuredate,
         returndate: travelQuote.returndate,
         destiny: parseInt(JSON.parse(cotacao.destinations)),

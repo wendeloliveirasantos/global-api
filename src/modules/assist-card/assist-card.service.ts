@@ -468,7 +468,10 @@ export class AssistCardService {
       ...dto
     };
 
-    const url = assistCardUrl + '/APIjson/Emissao'
+    //const url = assistCardUrl + '/APIjson/Emissao';
+
+    const url = 'https://portalbr_p.assistcard.com/APIjson/Emissao';
+
     return this.httpService.post(url, input, { headers }).pipe(
       map((res) => {
         if (res.data.success) {

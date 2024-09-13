@@ -89,7 +89,6 @@ export class HybridService {
 
   private async cotacaoNowSys(hybridQuoteDto: HybridQuoteDto) {
     const quotes: HybridQuoteResponse[] = [];
-    
     return new Promise<void>((resolve, reject) => {
       this.nowSysService.cotacao({
         business: hybridQuoteDto.business,

@@ -132,7 +132,9 @@ export class NowSysService {
         headers,
       })
       .pipe(
-        map((res) => res.data),
+        map((res) => { 
+          return res.data;
+         }),
         catchError(() => {
           throw new ForbiddenException(
             'Now Sys not available to quote',
@@ -194,7 +196,7 @@ export class NowSysService {
     queryParams.append('IS', dto.IS);
 
     const urlQuery = url + '?' + queryParams.toString();
-    
+
     return this.httpService
       .get(urlQuery, {
         headers,
@@ -230,6 +232,7 @@ export class NowSysService {
     };
 
     const url = nowSysUrl + '/proposta';
+    console.log(input);
     return this.httpService.post(url, input, { headers }).pipe(
       map((res) => {
         if (res.data.status == 'Sucesso') {
@@ -253,7 +256,7 @@ export class NowSysService {
   cotacao(dto: NowSysCotacaoInput): Observable<NowSysCotacao[]> {
     return this.listaProdutos().pipe(
       switchMap(res => {
-        const planos = res.items.filter(item => item.nome.includes(dto.business));
+        const planos = res.items.filter(item => item.nome.toUpperCase().includes(dto.business.toUpperCase()));
         const buscaProdutoObservables = planos.map(plano =>
           this.buscarProduto(parseInt(plano.codigo))
         );
@@ -264,8 +267,9 @@ export class NowSysService {
               const cotacao = produto.produto.caracteristicas;
   
               if (cotacao.nome.toUpperCase().includes("VIDA") || cotacao.nome.toUpperCase().includes("AP")) {
+                console.log(cotacao.coberturas[0].premio);
                 const faixas = cotacao.coberturas[0].premio.faixasImportanciaSegurada.map(faixa => String(faixa));
-  
+                
                 return faixas.map(faixa => 
                   this.buscarPremio({ idade: this.calcularIdade(dto.birthDate).toString(), codigoProduto: cotacao.codigo, IS: faixa })
                 );
