@@ -52,12 +52,24 @@ class EnvironmentVariablesValidator {
 export default registerAs<AppConfig>('app', () => {
   validateConfig(process.env, EnvironmentVariablesValidator);
 
+  // return {
+  //   nodeEnv: 'development',
+  //   name: 'global',
+  //   workingDirectory: process.cwd(),
+  //   frontendDomain: 'http://localhost:3000',
+  //   backendDomain: 'http://localhost:4000',
+  //   port: 4000,
+  //   apiPrefix: 'api',
+  //   fallbackLanguage: 'pt-BR',
+  //   headerLanguage: 'x-custom-lang',
+  // };
+
   return {
-    nodeEnv: 'development',
+    nodeEnv: 'production',
     name: 'global',
     workingDirectory: process.cwd(),
-    frontendDomain: 'http://localhost:3000',
-    backendDomain: 'http://localhost:4000',
+    frontendDomain: 'https://dobyseg.com.br',
+    backendDomain: 'https://api.dobyseg.com.br',
     port: 4000,
     apiPrefix: 'api',
     fallbackLanguage: 'pt-BR',
