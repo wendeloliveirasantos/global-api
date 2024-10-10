@@ -22,8 +22,8 @@ import outsideConfig from './config/outside.config';
       isGlobal: true,
       load: [appConfig, universalAssistanceTravelConfig, assistCardConfig, nowSysConfig, outsideConfig]
     }),
-    MongooseModule.forRoot('mongodb://root:p1Hh7P0juRB0OIsZlxfyaHZwq9ncOqGOCJwggxyOzkwXYXsfT4xmAstzmp9kjL42@92.113.33.10:5432/global?authSource=admin&directConnection=true'),
-    //MongooseModule.forRoot('mongodb://localhost:27017/global'),
+    //MongooseModule.forRoot('mongodb://root:p1Hh7P0juRB0OIsZlxfyaHZwq9ncOqGOCJwggxyOzkwXYXsfT4xmAstzmp9kjL42@92.113.33.10:5432/global?authSource=admin&directConnection=true'),
+    MongooseModule.forRoot('mongodb://localhost:27017/global'),
     UniversalAssistanceModule,
     AssistCardModule,
     NowSysModule,

@@ -12,7 +12,7 @@ export class Customer extends Document {
   @Prop()
   gender: string;
 
-  @Prop({ unique: true })
+  @Prop()
   cpfNumber: string;
 
   @Prop()

@@ -11,6 +11,7 @@ export interface NowSysCotacao {
   clausulas: string[];
   representacao: string[];
   formasPagamento: FormaPagamento[];
+  codigoComercial: string;
 }
 
 export interface FaixaImportanciaSegurada {

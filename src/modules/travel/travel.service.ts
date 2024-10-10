@@ -18,6 +18,7 @@ import { AssistCardCotacaoInput } from '../assist-card/types/assist-card-cotacao
 import { AssistCardCotacao } from '../assist-card/types/assist-card-response';
 import { AssistCardCompraInput, Passageiro } from '../assist-card/types/assist-card-compra-input';
 import { addMonths, format } from 'date-fns';
+import { obterCodigoOperadoraAssistCard, obterCodigoOperadoraUniversal, obterOperadoraCartao } from 'src/utils/gerais';
 
 @Injectable()
 export class TravelService {
@@ -274,7 +275,7 @@ export class TravelService {
           codigoTarifaAcordo: 0,
         },
         dadosPagamento: {
-          codigoOperadora: this.obterCodigoOperadoraUniversal(this.obterOperadoraCartao(compraDto.payment.cardNumber)),
+          codigoOperadora: obterCodigoOperadoraUniversal(obterOperadoraCartao(compraDto.payment.cardNumber)),
           nomeTitularCartao: compraDto.payment.cardholderName,
           cpfTitular: compraDto.payment.cardholderCPF,
           numeroCartao: compraDto.payment.cardNumber,
@@ -288,25 +289,27 @@ export class TravelService {
 
     let customer;
 
-    customer = await this.customerService.findOneByCpf(
-      compraDto.holder.cpfNumber,
-    );
-    if (!customer) {
-      customer = await this.customerService.createCustomer({
-        firstName: compraDto.holder.firstName,
-        lastName: compraDto.holder.lastName,
-        cpfNumber: compraDto.holder.cpfNumber,
-        cellPhone: compraDto.holder.cellPhone,
-        email: compraDto.holder.email,
-        address: compraDto.holder.address,
-        zipCode: compraDto.holder.zipCode,
-        number: compraDto.holder.number,
-        neighborhood: compraDto.holder.neighborhood,
-        city: compraDto.holder.city,
-        uf: compraDto.holder.uf,
-        birthDate: compraDto.holder.birthDate,
-      });
-    }
+    // customer = await this.customerService.findOneByCpf(
+    //   compraDto.holder.cpfNumber,
+    // );
+    // if (!customer) {
+      
+    // }
+
+    customer = await this.customerService.createCustomer({
+      firstName: compraDto.holder.firstName,
+      lastName: compraDto.holder.lastName,
+      cpfNumber: compraDto.holder.cpfNumber,
+      cellPhone: compraDto.holder.cellPhone,
+      email: compraDto.holder.email,
+      address: compraDto.holder.address,
+      zipCode: compraDto.holder.zipCode,
+      number: compraDto.holder.number,
+      neighborhood: compraDto.holder.neighborhood,
+      city: compraDto.holder.city,
+      uf: compraDto.holder.uf,
+      birthDate: compraDto.holder.birthDate,
+    });
 
     await this.travelCompraModel.create({
       contato: customer,
@@ -396,7 +399,7 @@ export class TravelService {
         creditcardname: compraDto.payment.cardholderName,
         creditcardnumber: compraDto.payment.cardNumber,
         expirationdate: compraDto.payment.expiryMonth + '/' + compraDto.payment.expiryYear,
-        cardholdername: this.obterCodigoOperadoraAssistCard(this.obterOperadoraCartao(compraDto.payment.cardNumber)).toString(),
+        cardholdername: obterCodigoOperadoraAssistCard(obterOperadoraCartao(compraDto.payment.cardNumber)).toString(),
         CurrencyCode: 2,
         instalments: compraDto.payment.installments,
         contactfullname: compraDto.emergencyContact.name,
@@ -417,24 +420,26 @@ export class TravelService {
 
     let customer;
 
-    customer = await this.customerService.findOneByCpf(
-      compraDto.holder.cpfNumber,
-    );
-    if (!customer) {
-      customer = await this.customerService.createCustomer({
-        firstName: compraDto.holder.firstName,
-        lastName: compraDto.holder.lastName,
-        cpfNumber: compraDto.holder.cpfNumber,
-        cellPhone: compraDto.holder.cellPhone,
-        address: compraDto.holder.address,
-        zipCode: compraDto.holder.zipCode,
-        number: compraDto.holder.number,
-        neighborhood: compraDto.holder.neighborhood,
-        city: compraDto.holder.city,
-        uf: compraDto.holder.uf,
-        birthDate: compraDto.holder.birthDate,
-      });
-    }
+    // customer = await this.customerService.findOneByCpf(
+    //   compraDto.holder.cpfNumber,
+    // );
+    // if (!customer) {
+      
+    // }
+
+    customer = await this.customerService.createCustomer({
+      firstName: compraDto.holder.firstName,
+      lastName: compraDto.holder.lastName,
+      cpfNumber: compraDto.holder.cpfNumber,
+      cellPhone: compraDto.holder.cellPhone,
+      address: compraDto.holder.address,
+      zipCode: compraDto.holder.zipCode,
+      number: compraDto.holder.number,
+      neighborhood: compraDto.holder.neighborhood,
+      city: compraDto.holder.city,
+      uf: compraDto.holder.uf,
+      birthDate: compraDto.holder.birthDate,
+    });
 
     responseCompra.Emissiondate = format(new Date(), 'yyyy-MM-dd');
 
@@ -445,56 +450,5 @@ export class TravelService {
     });
     
     return responseCompra;
-  }
-
-  private obterCodigoOperadoraUniversal(operadora: string) {
-    switch (operadora.toLowerCase()) {
-      case 'amex':
-        return 1;
-      case 'visa':
-        return 2;
-      case 'mastercard':
-        return 3;
-      default:
-        return null;
-    }
-  }
-
-  private obterCodigoOperadoraAssistCard(operadora: string) {
-    switch (operadora.toLowerCase()) {
-      case 'amex':
-        return 3;
-      case 'visa':
-        return 1;
-      case 'mastercard':
-        return 2;
-      default:
-        return null;
-    }
-  }
-
-  private obterOperadoraCartao(numeroCartao: string): string {
-    const visaRegex = /^4\d{12}(?:\d{3})?$/;
-    const mastercardRegex = /^5[1-5]\d{14}$/;
-    const amexRegex = /^3[47]\d{13}$/;
-    const discoverRegex = /^6(?:011|5\d{2})\d{12}$/;
-    const dinersClubRegex = /^3(?:0[0-5]|[68]\d)\d{11}$/;
-    const jcbRegex = /^(?:2131|1800|35\d{3})\d{11}$/;
-
-    if (visaRegex.test(numeroCartao)) {
-        return 'visa';
-    } else if (mastercardRegex.test(numeroCartao)) {
-        return 'mastercard';
-    } else if (amexRegex.test(numeroCartao)) {
-        return 'amex';
-    } else if (discoverRegex.test(numeroCartao)) {
-        return 'discover';
-    } else if (dinersClubRegex.test(numeroCartao)) {
-        return 'dinersclub';
-    } else if (jcbRegex.test(numeroCartao)) {
-        return 'jcb';
-    } else {
-        return null;
-    }
   }
 }

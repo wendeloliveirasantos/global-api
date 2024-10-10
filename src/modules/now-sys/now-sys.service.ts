@@ -20,6 +20,7 @@ import { NowSysInserirPropostaInput } from './types/now-sys-inserir-proposta-inp
 import { NowSysInserirPropostaResponse } from './types/now-sys-inserir-proposta-response';
 import { NowSysBuscaPremioInput } from './types/now-sys-busca-premio-input';
 import { NowSysBuscaPremioResponse } from './types/now-sys-busca-premio-response';
+import { calcularIdade } from 'src/utils/gerais';
 
 
 @Injectable()
@@ -232,7 +233,42 @@ export class NowSysService {
     };
 
     const url = nowSysUrl + '/proposta';
-    console.log(input);
+    return this.httpService.post(url, input, { headers }).pipe(
+      map((res) => {
+        if (res.data.status == 'Sucesso') {
+          return res.data.retorno
+        }
+        else{
+          throw new BadRequestException(
+            'Now Sys not available to purchase',
+          );
+        }
+      }),
+      catchError((error) => {
+        this.logger.error({ input, error });
+        throw new ForbiddenException(
+          'Now Sys not available to purchase',
+        );
+      }),
+    );
+  }
+
+  gerarCobranca(
+    dto: NowSysInserirPropostaInput
+  ): Observable<NowSysInserirPropostaResponse> {
+    const {
+      nowSysUrl
+    } = this.getConfig();
+
+    const headers = {
+      authorization: this.token.value.token
+    };
+
+    const input: NowSysInserirPropostaInput = {
+      ...dto
+    };
+
+    const url = nowSysUrl + '/cobranca';
     return this.httpService.post(url, input, { headers }).pipe(
       map((res) => {
         if (res.data.status == 'Sucesso') {
@@ -267,11 +303,10 @@ export class NowSysService {
               const cotacao = produto.produto.caracteristicas;
   
               if (cotacao.nome.toUpperCase().includes("VIDA") || cotacao.nome.toUpperCase().includes("AP")) {
-                console.log(cotacao.coberturas[0].premio);
                 const faixas = cotacao.coberturas[0].premio.faixasImportanciaSegurada.map(faixa => String(faixa));
                 
                 return faixas.map(faixa => 
-                  this.buscarPremio({ idade: this.calcularIdade(dto.birthDate).toString(), codigoProduto: cotacao.codigo, IS: faixa })
+                  this.buscarPremio({ idade: calcularIdade(dto.birthDate).toString(), codigoProduto: cotacao.codigo, IS: faixa })
                 );
               } else {
                 return of(null);
@@ -342,21 +377,5 @@ export class NowSysService {
       nowSysLogin,
       nowSysSenha
     };
-  }
-
-  private calcularIdade(dataNascimento: string) {
-    const hoje = new Date();
-    const dataNascimentoDate = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - dataNascimentoDate.getFullYear();
-    const mesAtual = hoje.getMonth() + 1;
-    const diaAtual = hoje.getDate();
-    const mesNascimento = dataNascimentoDate.getMonth() + 1;
-    const diaNascimento = dataNascimentoDate.getDate();
-  
-    if (mesAtual < mesNascimento || (mesAtual === mesNascimento && diaAtual < diaNascimento)) {
-      idade--;
-    }
-  
-    return idade;
   }
 }
