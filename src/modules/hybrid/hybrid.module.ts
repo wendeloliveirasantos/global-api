@@ -7,12 +7,14 @@ import { CustomerModule } from '../customer/customer.module';
 import { HybridCompra, HybridCompraSchema } from './schemas/hybrid-compra';
 import { OutSideModule } from '../outside/outside.module';
 import { NowSysModule } from '../now-sys/now-sys.module';
+import { SendGridModule } from '../sendgrid/sendgrid.module';
 
 @Module({
   imports: [
     CustomerModule,
     NowSysModule,
     OutSideModule,
+    SendGridModule,
     MongooseModule.forFeature([
       { name: HybridQuote.name, schema: HybridQuoteSchema },
       { name: HybridCompra.name, schema: HybridCompraSchema },

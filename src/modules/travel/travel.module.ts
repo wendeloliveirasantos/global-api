@@ -8,6 +8,7 @@ import { CustomerModule } from '../customer/customer.module';
 import { TravelCompra, TravelCompraSchema } from './schemas/travel-compra';
 import { AssistCardModule } from '../assist-card/assist-card.module';
 import { OutSideModule } from '../outside/outside.module';
+import { SendGridModule } from '../sendgrid/sendgrid.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { OutSideModule } from '../outside/outside.module';
     UniversalAssistanceModule,
     AssistCardModule,
     OutSideModule,
+    SendGridModule,
     MongooseModule.forFeature([
       { name: TravelQuote.name, schema: TravelQuoteSchema },
       { name: TravelCompra.name, schema: TravelCompraSchema },

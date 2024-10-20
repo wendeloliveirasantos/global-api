@@ -17,6 +17,7 @@ import { NowSysTokenCartaoResponse } from '../now-sys/types/now-sys-token-cartao
 import { NowSysInserirPropostaResponse } from '../now-sys/types/now-sys-inserir-proposta-response';
 import { calcularIdade } from 'src/utils/gerais';
 import { ItemSegurado } from '../now-sys/types/now-sys-inserir-proposta';
+import { SendGridService } from '../sendgrid/sendgrid.service';
 
 @Injectable()
 export class HybridService {
@@ -30,6 +31,7 @@ export class HybridService {
     private customerService: CustomerService,
     @InjectModel(HybridCompra.name)
     private readonly hybridCompraModel: Model<HybridCompra>,
+    private readonly sendGridService: SendGridService
   ) {}
 
   async cotacao(hybridQuoteDto: HybridQuoteDto): Promise<any> {
@@ -285,6 +287,16 @@ export class HybridService {
       provider: 'nowSys',
       metadata: JSON.stringify(responseCompra),
     });
+    
+    const dynamicData = {
+      segurado: compraDto.holder.firstName + ' ' + compraDto.holder.lastName,
+      plano: hybridQuote.nome,
+      seguradora: 'Now Seguros',
+      telefoneSeguradora: '0800 111 9144',
+      emailSeguradora: 'sinistro@nowseguros.seg.br'
+    };
+
+    await this.sendGridService.sendEmailDobyseg(compraDto.holder.email, dynamicData);
     
     return responseCompra;
   }

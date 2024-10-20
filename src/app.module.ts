@@ -15,6 +15,7 @@ import { HybridModule } from './modules/hybrid/hybrid.module';
 import { UserModule } from './modules/user/user.module';
 import { AdminModule } from './modules/admin/admin.module';
 import outsideConfig from './config/outside.config';
+import { SendGridModule } from './modules/sendgrid/sendgrid.module';
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import outsideConfig from './config/outside.config';
     CustomerModule,
     OutSideModule,
     AdminModule,
-    UserModule
+    UserModule,
+    SendGridModule
   ],
 })
 export class AppModule {}
