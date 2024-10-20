@@ -61,4 +61,9 @@ export type AllConfigType = {
   assistCard: AssistCard;
   nowSys: NowSys;
   outSide: OutSide;
+  sendGrid: SendGrid;
 };
+
+export type SendGrid = {
+  sendGridApiKey: string;
+}

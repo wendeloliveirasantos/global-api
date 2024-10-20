@@ -19,6 +19,7 @@ import { AssistCardCotacao } from '../assist-card/types/assist-card-response';
 import { AssistCardCompraInput, Passageiro } from '../assist-card/types/assist-card-compra-input';
 import { addMonths, format } from 'date-fns';
 import { obterCodigoOperadoraAssistCard, obterCodigoOperadoraUniversal, obterOperadoraCartao } from 'src/utils/gerais';
+import { SendGridService } from '../sendgrid/sendgrid.service';
 
 @Injectable()
 export class TravelService {
@@ -33,6 +34,7 @@ export class TravelService {
     private customerService: CustomerService,
     @InjectModel(TravelCompra.name)
     private readonly travelCompraModel: Model<TravelCompra>,
+    private readonly sendGridService: SendGridService
   ) {}
 
   async cotacao(travelQuoteDto: TravelQuoteDto): Promise<any> {
@@ -317,6 +319,16 @@ export class TravelService {
       metadata: JSON.stringify(responseCompra),
     });
 
+    const dynamicData = {
+      segurado: compraDto.holder.firstName + ' ' + compraDto.holder.lastName,
+      plano: 'Viagem',
+      seguradora: 'Universal Assistence',
+      telefoneSeguradora: '+55 (11) 4040-4337',
+      emailSeguradora: 'equipobrasil@universal-assistance.com'
+    };
+
+    await this.sendGridService.sendEmailDobyseg(compraDto.holder.email, dynamicData);
+
     return responseCompra;
   }
 
@@ -449,6 +461,16 @@ export class TravelService {
       metadata: JSON.stringify(responseCompra),
     });
     
+    const dynamicData = {
+      segurado: compraDto.holder.firstName + ' ' + compraDto.holder.lastName,
+      plano: 'Viagem',
+      seguradora: 'Assist Card',
+      telefoneSeguradora: '+55 (11) 3191-8700',
+      emailSeguradora: 'contacto@assistcard.com'
+    };
+
+    await this.sendGridService.sendEmailDobyseg(compraDto.holder.email, dynamicData);
+
     return responseCompra;
   }
 }
